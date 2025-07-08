@@ -1,0 +1,12 @@
+# Node / React
+node_modules/
+.env
+dist/
+build/
+coverage/
+npm-debug.log*
+*.log
+
+# IDE
+.vscode/
+.idea/
