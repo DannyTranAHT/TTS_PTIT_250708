@@ -17,11 +17,11 @@
 
 ## 📁 API Resources
 
-- `/api/auth` - Register, login
-- `/api/projects` - CRUD for projects
-- `/api/tasks` - CRUD for tasks
+- `/api/auth` - Register, login - Quynh
+- `/api/projects` - CRUD for projects - Phu
+- `/api/tasks` - CRUD for tasks - Phu
 - `/api/comments` - Commenting system
-- `/api/users` - Basic user profile & listing
+- `/api/users` - Basic user profile & listing - Quynh
 
 ## ⚙️ Real-time via Socket.IO
 

@@ -29,3 +29,34 @@
 - [ ] Env-based config setup
 - [ ] Endpoints documented (Swagger/Postman)
 - [ ] Minimum 10 unit/integration tests
+
+
+# Progress Milestones
+## Milestone 1: Design Documentation
+- [ ] Figma mockups for all core screens - 1 days
+- [ ] Database schema - 2 days
+- [ ] User flow diagrams with detailed states (Sequence Diagram) - 1 days
+- [ ] Swagger API docs - Later
+- [ ] Define test cases - 0.5 days
+
+## Milestone 2: CRUD Functionality
+
+### Backend Tasks
+- [ ] User authentication endpoints
+- [ ] Task CRUD API endpoints
+- [ ] Data validation middleware
+- [ ] Error handling structure
+
+### Frontend Tasks
+- [ ] Login/Register forms
+- [ ] Task list/create/edit views
+- [ ] Form validation & error displays
+- [ ] API integration services
+- [ ] Basic routing setup
+
+### Mobile Tasks
+- [ ] Auth screens implementation
+- [ ] Task management screens
+- [ ] Local storage setup
+- [ ] API service integration
+- [ ] Basic navigation flow
