@@ -33,16 +33,26 @@
 
 # Progress Milestones
 ## Milestone 1: Design Documentation
-- [ ] Figma mockups for all core screens - 1 days
-- [ ] Database schema - 2 days
+- [x] Figma mockups for all core screens - 1 days
+- [ ] Database schema - 2 days (Used 1.5 days)
+    - Missing Admin related schemas
 - [ ] User flow diagrams with detailed states (Sequence Diagram) - 1 days
-- [ ] Swagger API docs - Later
 - [ ] Define test cases - 0.5 days
 
 ## Milestone 2: CRUD Functionality
 
 ### Backend Tasks
-- [ ] User authentication endpoints
+- [ ] User authentication endpoints - 1 days
+- [ ] User Profile endpoints - 1 days
+- [ ] Project Management endpoints - 2 days
+
+## Backlog tasks
+### Design Documentations
+- [ ] Swagger API docs 
+
+### Backend tasks
+- [ ] Refresh Token
+- [ ] Invalidate tokens on change password
 - [ ] Task CRUD API endpoints
 - [ ] Data validation middleware
 - [ ] Error handling structure
