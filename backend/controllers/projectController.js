@@ -213,16 +213,16 @@ const addMember = async (req, res) => {
       .populate('members', 'username full_name email role');
 
     // Notify the new member
-    await createNotification({
-      user_id,
-      type: 'project_updated',
-      title: 'Added to Project',
-      message: `You have been added to project: ${project.name}`,
-      related_entity: {
-        entity_type: 'Project',
-        entity_id: project._id
-      }
-    });
+    // await createNotification({
+    //   user_id,
+    //   type: 'project_updated',
+    //   title: 'Added to Project',
+    //   message: `You have been added to project: ${project.name}`,
+    //   related_entity: {
+    //     entity_type: 'Project',
+    //     entity_id: project._id
+    //   }
+    // });
 
     res.json({
       message: 'Member added successfully',
