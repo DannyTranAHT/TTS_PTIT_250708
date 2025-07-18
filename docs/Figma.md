@@ -3,6 +3,47 @@ TODO: Add Figma design for FE and Mobile
 
 # Frontend
 
+# Web
+### 1. Màn hình 1
+
+![Image 1](https://github.com/user-attachments/assets/cd35583f-6b1b-4f08-8c3e-3b133bff2208)
+
+### 2. Màn hình 2
+
+![Image 2](https://github.com/user-attachments/assets/7268cb3e-7503-4260-bdaa-c54209ea7a8c)
+
+### 3. Màn hình 3
+
+![Image 3](https://github.com/user-attachments/assets/e1e07d34-ad84-425e-9a32-4f523aaa60b9)
+
+### 4. Màn hình 4
+
+![Image 4](https://github.com/user-attachments/assets/b328da36-4d95-4e4a-80d5-09a2531e4958)
+
+### 5. Màn hình 5
+
+![Image 5](https://github.com/user-attachments/assets/f4ec7145-023d-4b90-a9a8-e73003d2e6dd)
+
+### 6. Màn hình 6
+
+![Image 6](https://github.com/user-attachments/assets/460ebd0e-a24d-4ef7-8480-8cef9fc2c198)
+
+### 7. Màn hình 7
+
+![Image 7](https://github.com/user-attachments/assets/5d0a0a09-1581-4d00-a0b6-48e7bc90f7a1)
+
+### 8. Màn hình 8
+
+![Image 8](https://github.com/user-attachments/assets/bd7c16d8-1dc3-42ef-bab8-a4e78c445aaa)
+
+### 9. Màn hình 9
+
+![Image 9](https://github.com/user-attachments/assets/a07f0606-ee20-4e9e-a986-9b6ee000426a)
+
+### 10. Màn hình 10
+
+![Image 10](https://github.com/user-attachments/assets/6b7174bf-08a0-41a7-89e9-f47ae61db3a2)
+
 # Mobile
 ### 1. Màn hình 1
 
