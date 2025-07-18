@@ -28,6 +28,8 @@ This is a full-stack internal project management and collaboration tool built us
 - 🌐 [Web Frontend Overview](docs/Web.md)
 - 📱 [Mobile Frontend Overview](docs/Mobile.md)
 - ✅ [Technical Milestones](docs/Milestones.md)
+- 📏 [Coding Guideline](docs/Coding_guideline/README.md)
+- 🔀 [Git Workflow](docs/Git/README.md)
 
 ## 🚀 Getting Started
 
