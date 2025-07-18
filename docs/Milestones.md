@@ -45,15 +45,21 @@
 - [ ] User authentication endpoints - 1 days
 - [ ] User Profile endpoints - 1 days
 - [ ] Project Management endpoints - 2 days
+- [ ] Task CRUD API endpoints - extra
 
-## Backlog tasks
+## Milestone 3: 
 ### Design Documentations
 - [ ] Swagger API docs 
 
 ### Backend tasks
-- [ ] Refresh Token
+- [ ] Setup Notification(web socket) - 2 days
+- [ ] Comments - 1 days
+- [ ] Refresh Token - 1 days
+### Frontend tasks
+- [ ] Login screen (mobile + web) - 1 days
+
+## Backlog tasks
 - [ ] Invalidate tokens on change password
-- [ ] Task CRUD API endpoints
 - [ ] Data validation middleware
 - [ ] Error handling structure
 
@@ -63,6 +69,7 @@
 - [ ] Form validation & error displays
 - [ ] API integration services
 - [ ] Basic routing setup
+- [ ] Task Hyperlink - 
 
 ### Mobile Tasks
 - [ ] Auth screens implementation
