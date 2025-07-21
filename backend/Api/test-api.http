@@ -1,0 +1,113 @@
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "123456"
+}
+
+# ### Create a new task
+# POST http://localhost:5000/api/tasks
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "project_id": "{{project_id}}",
+#   "name": "Sample Task",
+#   "description": "Task description",
+#   "due_date": "2025-07-31",
+#   "status": "To Do",
+#   "priority": "Medium",
+#   "assigned_to_id": "{{user_id}}",
+#   "hours": 4,
+#   "attachments": []
+# }
+
+# ### Get all tasks in a project
+# GET http://localhost:5000/api/tasks/project/{{project_id}}
+# Authorization: Bearer {{token}}
+
+# ### Get task by id
+# GET http://localhost:5000/api/tasks/{{task_id}}
+# Authorization: Bearer {{token}}
+
+# ### Update a task
+# PUT http://localhost:5000/api/tasks/{{task_id}}
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "name": "Updated Task Name",
+#   "description": "Updated description"
+# }
+
+# ### Assign member to task
+# POST http://localhost:5000/api/tasks/{{task_id}}/assign
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "user_id": "{{user_id}}"
+# }
+
+# ### Unassign member from task
+# POST http://localhost:5000/api/tasks/{{task_id}}/unassign
+# Authorization: Bearer {{token}}
+
+# ### Request complete task (assignee)
+# POST http://localhost:5000/api/tasks/{{task_id}}/request-complete
+# Authorization: Bearer {{token}}
+
+# ### Confirm complete task (creator)
+# POST http://localhost:5000/api/tasks/{{task_id}}/confirm-complete
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "confirm": true
+# }
+
+# ### Create a comment for a task
+# POST http://localhost:5000/api/comments
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "entity_type": "Task",
+#   "entity_id": "{{task_id}}",
+#   "content": "This is a comment for the task"
+# }
+
+# ### Reply to a comment
+# POST http://localhost:5000/api/comments
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "entity_type": "Task",
+#   "entity_id": "{{task_id}}",
+#   "content": "This is a reply",
+#   "parent_id": "{{comment_id}}"
+# }
+
+# ### Update a comment
+# PUT http://localhost:5000/api/comments/{{comment_id}}
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+# {
+#   "content": "Updated comment content"
+# }
+
+# ### Delete a comment
+# DELETE http://localhost:5000/api/comments/{{comment_id}}
+# Authorization: Bearer {{token}}
+
+# ### Get comments for a task
+# GET http://localhost:5000/api/comments?entity_type=Task&entity_id={{task_id}}
+# Authorization: Bearer {{token}}
+
+# ### Get comments for a project
+# GET http://localhost:5000/api/comments?entity_type=Project&entity_id={{project_id}}
+# Authorization: Bearer {{token}}

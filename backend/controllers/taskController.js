@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
 const Project = require('../models/Project');
+const { createNotification } = require('../services/notificationService');
 
 // Tạo task mới cho 1 project
 const createTask = async (req, res) => {
@@ -29,6 +30,27 @@ const createTask = async (req, res) => {
       hours,
       attachments
     });
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
+
+    if (task.assigned_to_id) {
+      await createNotification({
+        user_id: task.assigned_to_id,
+        type: 'task_assigned',
+        title: 'New Task Assigned',
+        message: `You have been assigned a new task: ${task.name}`,
+        related_entity: {
+          entity_type: 'Task',
+          entity_id: task._id
+        }
+      });
+      const io = req.app.get('io');
+      io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
+        task: populatedTask,
+        message: `New task assigned: ${task.name}`
+      });
+    }
     res.status(201).json({ message: 'Task created successfully', task });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -160,6 +182,29 @@ const updateTask = async (req, res) => {
     // Không cho cập nhật project_id trực tiếp qua API này
     delete updates.project_id;
     const updatedTask = await Task.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+    
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
+
+    if (task.assigned_to_id) {
+      await createNotification({
+        user_id: task.assigned_to_id,
+        type: 'task_assigned',
+        title: 'New Task Assigned',
+        message: `You have been assigned a new task: ${task.name}`,
+        related_entity: {
+          entity_type: 'Task',
+          entity_id: task._id
+        }
+      });
+      const io = req.app.get('io');
+      io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
+        task: populatedTask,
+        message: `New task assigned: ${task.name}`
+      });
+    }
+ 
     res.json({ message: 'Task updated successfully', task: updatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -182,6 +227,18 @@ const requestCompleteTask = async (req, res) => {
     // Đánh dấu trạng thái yêu cầu hoàn thành (dùng status hoặc thêm trường tạm thời)
     task.status = 'In Review';
     await task.save();
+    
+    await createNotification({
+      user_id: task.createdBy,
+      type: 'task_completion_requested',
+      title: 'Task Completion Requested',
+      message: `Task ${task.name} has been requested for completion by ${req.user.username}`,
+      related_entity: {
+        entity_type: 'Task',
+        entity_id: task._id
+      }
+    });
+
     res.json({ message: 'Completion request sent. Waiting for confirmation from creator.', task });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -206,10 +263,32 @@ const confirmCompleteTask = async (req, res) => {
     }
     if (confirm === true) {
       task.status = 'Done';
+      await createNotification({
+        user_id: task.assigned_to_id,
+        type: 'task_completed',
+        title: 'Task Completed',
+        message: `Task ${task.name} has been confirmed as completed by ${req.user.username}`,
+        related_entity: {
+          entity_type: 'Task',
+          entity_id: task._id
+        }
+      });
     } else {
       task.status = 'Blocked';
+      await createNotification({
+        user_id: task.assigned_to_id,
+        type: 'task_not_completed',
+        title: 'Task Not Completed',
+        message: `Task ${task.name} has been marked as not completed by ${req.user.username}`,
+        related_entity: {
+          entity_type: 'Task',
+          entity_id: task._id
+        }
+      });
     }
     await task.save();
+    
+    
     res.json({ message: confirm ? 'Task confirmed as completed.' : 'Task marked as not completed.', task });
   } catch (error) {
     res.status(500).json({ message: error.message });

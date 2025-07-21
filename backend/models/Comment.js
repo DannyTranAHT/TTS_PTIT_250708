@@ -1,42 +1,49 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const commentSchema = new Schema({
+const commentSchema = new mongoose.Schema({
   entity_type: {
     type: String,
     enum: ['Project', 'Task'],
     required: true
   },
   entity_id: {
-    type: Schema.Types.ObjectId,
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    refPath: 'entity_type'
   },
   user_id: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   content: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   parent_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'Comment',
-    default: null
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment'
   },
-  attachments: {
-    type: [String], 
-    default: []
-  },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
+  attachments: [{
+    filename: String,
+    original_name: String,
+    path: String,
+    size: Number,
+    mimetype: String,
+    uploaded_at: { type: Date, default: Date.now }
+  }],
+  is_deleted: {
+    type: Boolean,
+    default: false
   }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
+
+// Indexes
+commentSchema.index({ entity_type: 1, entity_id: 1 });
+commentSchema.index({ user_id: 1 });
+commentSchema.index({ parent_id: 1 });
 
 module.exports = mongoose.model('Comment', commentSchema);

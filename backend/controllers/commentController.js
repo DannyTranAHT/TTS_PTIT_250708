@@ -1,25 +1,117 @@
 const Comment = require('../models/Comment');
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+const { createNotification } = require('../services/notificationService');
 
-// Tạo comment mới (cả bình luận và trả lời)
+const getComments = async (req, res) => {
+  try {
+    const { entity_type, entity_id, page = 1, limit = 20 } = req.query;
+
+    if (!entity_type || !entity_id) {
+      return res.status(400).json({ 
+        message: 'entity_type and entity_id are required' 
+      });
+    }
+
+    // Verify entity exists and user has access
+    let entity;
+    if (entity_type === 'Project') {
+      entity = await Project.findById(entity_id);
+    } else if (entity_type === 'Task') {
+      entity = await Task.findById(entity_id).populate('project_id');
+    }
+
+    if (!entity) {
+      return res.status(404).json({ message: `${entity_type} not found` });
+    }
+
+    // Check access permissions
+    let hasAccess = false;
+    if (entity_type === 'Project') {
+      hasAccess = req.user.role === 'Admin' || 
+                 entity.owner_id.toString() === req.user._id.toString() ||
+                 entity.members.includes(req.user._id);
+    } else if (entity_type === 'Task') {
+      const project = entity.project_id;
+      hasAccess = req.user.role === 'Admin' || 
+                 project.owner_id.toString() === req.user._id.toString() ||
+                 project.members.includes(req.user._id);
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const comments = await Comment.find({
+      entity_type,
+      entity_id,
+      is_deleted: false
+    })
+    .populate('user_id', 'username full_name avatar')
+    .populate('parent_id')
+    .sort({ created_at: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+    const total = await Comment.countDocuments({
+      entity_type,
+      entity_id,
+      is_deleted: false
+    });
+
+    res.json({
+      comments,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const createComment = async (req, res) => {
   try {
-    const { entity_type, entity_id, content, parent_id, attachments } = req.body;
+    const { entity_type, entity_id, content, parent_id } = req.body;
 
-    // Kiểm tra entity_type và entity_id có hợp lệ không
+    // Verify entity exists and user has access
+    let entity;
+    let entityName;
+    let notificationRecipients = [];
+
     if (entity_type === 'Project') {
-      const project = await Project.findById(entity_id);
-      if (!project) {
-        return res.status(400).json({ message: 'Invalid project id' });
+      entity = await Project.findById(entity_id).populate('members', '_id');
+      if (!entity) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+      
+      entityName = entity.name;
+      notificationRecipients = entity.members.map(m => m._id);
+      
+      const hasAccess = req.user.role === 'Admin' || 
+                       entity.owner_id.toString() === req.user._id.toString() ||
+                       entity.members.some(m => m._id.toString() === req.user._id.toString());
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: 'Access denied' });
       }
     } else if (entity_type === 'Task') {
-      const task = await Task.findById(entity_id);
-      if (!task) {
-        return res.status(400).json({ message: 'Invalid task id' });
+      entity = await Task.findById(entity_id).populate('project_id');
+      if (!entity) {
+        return res.status(404).json({ message: 'Task not found' });
       }
-    } else {
-      return res.status(400).json({ message: 'Invalid entity_type' });
+      
+      entityName = entity.name;
+      const project = await Project.findById(entity.project_id._id).populate('members', '_id');
+      notificationRecipients = project.members.map(m => m._id);
+      
+      const hasAccess = req.user.role === 'Admin' || 
+                       project.owner_id.toString() === req.user._id.toString() ||
+                       project.members.some(m => m._id.toString() === req.user._id.toString());
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     }
 
     const comment = await Comment.create({
@@ -27,95 +119,109 @@ const createComment = async (req, res) => {
       entity_id,
       user_id: req.user._id,
       content,
-      parent_id: parent_id || null,
-      attachments: attachments || []
+      parent_id: parent_id || undefined
     });
-    res.status(201).json({ message: 'Comment created', comment });
+
+    const populatedComment = await Comment.findById(comment._id)
+      .populate('user_id', 'username full_name avatar')
+      .populate('parent_id');
+
+    // Send notifications to entity members (except comment author)
+    const recipientIds = notificationRecipients.filter(
+      id => id.toString() !== req.user._id.toString()
+    );
+
+    const notificationPromises = recipientIds.map(userId => 
+      createNotification({
+        user_id: userId,
+        type: 'comment_added',
+        title: 'New Comment',
+        message: `${req.user.full_name} commented on ${entity_type.toLowerCase()}: ${entityName}`,
+        related_entity: {
+          entity_type: 'Comment',
+          entity_id: comment._id
+        }
+      })
+    );
+
+    await Promise.all(notificationPromises);
+
+    // Real-time notification
+    const io = req.app.get('io');
+    recipientIds.forEach(userId => {
+      io.to(`user_${userId}`).emit('comment:new', {
+        comment: populatedComment,
+        entity_type,
+        entity_name: entityName,
+        author: req.user.full_name
+      });
+    });
+
+    res.status(201).json({
+      message: 'Comment created successfully',
+      comment: populatedComment
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Sửa comment
 const updateComment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, attachments } = req.body;
+    const { content } = req.body;
+
     const comment = await Comment.findById(id);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
-    // Chỉ chủ comment mới được sửa
-    if (comment.user_id.toString() !== req.user._id.toString()) {
+
+    // Only comment author or admin can update
+    if (comment.user_id.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
       return res.status(403).json({ message: 'Permission denied' });
     }
-    comment.content = content || comment.content;
-    comment.attachments = attachments || comment.attachments;
-    comment.updated_at = Date.now();
-    await comment.save();
-    res.json({ message: 'Comment updated', comment });
+
+    const updatedComment = await Comment.findByIdAndUpdate(
+      id,
+      { content },
+      { new: true, runValidators: true }
+    ).populate('user_id', 'username full_name avatar');
+
+    res.json({
+      message: 'Comment updated successfully',
+      comment: updatedComment
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Xóa comment
 const deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
+
     const comment = await Comment.findById(id);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
-    // Chỉ chủ comment hoặc admin mới được xóa
-    if (
-      comment.user_id.toString() !== req.user._id.toString() &&
-      req.user.role !== 'Admin'
-    ) {
+
+    // Only comment author or admin can delete
+    if (comment.user_id.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
       return res.status(403).json({ message: 'Permission denied' });
     }
-    await Comment.deleteOne({ _id: id });
-    // Xóa luôn các reply (nếu có)
-    await Comment.deleteMany({ parent_id: id });
-    res.json({ message: 'Comment deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
-// Lấy danh sách comment theo entity (project/task)
-const getComments = async (req, res) => {
-  try {
-    const { entity_type, entity_id } = req.query;
-    const comments = await Comment.find({
-      entity_type,
-      entity_id,
-      parent_id: null
-    })
-      .populate('user_id', 'username full_name avatar')
-      .sort({ created_at: -1 });
+    // Soft delete
+    await Comment.findByIdAndUpdate(id, { is_deleted: true });
 
-    // Lấy replies cho từng comment
-    const commentIds = comments.map(c => c._id);
-    const replies = await Comment.find({ parent_id: { $in: commentIds } })
-      .populate('user_id', 'username full_name avatar')
-      .sort({ created_at: 1 });
-
-    // Gắn replies vào từng comment
-    const commentsWithReplies = comments.map(comment => {
-      const commentReplies = replies.filter(r => r.parent_id && r.parent_id.toString() === comment._id.toString());
-      return { ...comment.toObject(), replies: commentReplies };
-    });
-
-    res.json({ comments: commentsWithReplies });
+    res.json({ message: 'Comment deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = {
+  getComments,
   createComment,
   updateComment,
-  deleteComment,
-  getComments
+  deleteComment
 };
