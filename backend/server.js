@@ -2,6 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/database');
+const setupSocketHandlers = require('./sockets/socketHandlers');
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,7 +11,19 @@ connectDB();
 
 // Create HTTP server
 const server = http.createServer(app);
+// Initialize Socket.IO
+const socketIO = require('socket.io');
+const io = socketIO(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+// Setup socket handlers
+setupSocketHandlers(io);
 
+// Make io accessible in routes
+app.set('io', io);
 
 // Graceful shutdown
 const gracefulShutdown = () => {
