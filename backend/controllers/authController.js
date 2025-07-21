@@ -3,7 +3,14 @@ const User = require('../models/User');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
+    expiresIn: process.env.JWT_EXPIRE || '1d'
+  });
+};
+
+// Thêm hàm sinh refresh token
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d'
   });
 };
 
@@ -33,10 +40,12 @@ const register = async (req, res) => {
     });
 
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.status(201).json({
       message: 'User registered successfully',
       token,
+      refreshToken,
       user
     });
   } catch (error) {
@@ -58,16 +67,32 @@ const login = async (req, res) => {
     if (!user.is_active) {
       return res.status(401).json({ message: 'Account is deactivated' });
     }
-
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.json({
       message: 'Login successful',
       token,
+      refreshToken,
       user: user.toJSON()
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// API làm mới access token từ refresh token
+const refreshTokenHandler = (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token required' });
+  }
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const newToken = generateToken(decoded.id);
+    res.json({ token: newToken });
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid or expired refresh token' });
   }
 };
 
@@ -102,5 +127,6 @@ module.exports = {
   register,
   login,
   getProfile,
-  updateProfile
+  updateProfile,
+  refreshTokenHandler
 };
