@@ -51,6 +51,9 @@
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
+.role-selector {
+  margin-bottom: 20px;
+}
 .role-selector select {
   width: 100%;
   padding: 12px 16px;
@@ -83,7 +86,7 @@
 .divider::before {
   content: '';
   position: absolute;
-  top: 50%; left: 0; right: 0;
+  top: 90%; left: 0; right: 0;
   height: 1px;
   background: #e1e5e9;
 }

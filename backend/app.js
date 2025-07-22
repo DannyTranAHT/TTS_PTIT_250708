@@ -13,6 +13,8 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
+const notificationRoutes = require('./routes/notifications');
+const commentRoutes = require('./routes/comments');
 
 const app = express();
 
@@ -43,13 +45,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/comments', commentRoutes);
 
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
-    availableRoutes: ['/api/auth', '/api/projects', '/api/users', '/api/tasks', '/api/comments']
+    availableRoutes: ['/api/auth', '/api/projects', '/api/users', '/api/tasks', '/api/comments', '/api/notifications']
   });
 });
 

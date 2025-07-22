@@ -77,7 +77,6 @@ export default function RegisterForm() {
             <option value="">Chọn vai trò</option>
             <option value="Employee">Nhân viên</option>
             <option value="Project Manager">Quản lý dự án</option>
-            <option value="Admin">Quản trị viên</option>
           </select>
         </div>
 

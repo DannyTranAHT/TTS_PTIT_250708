@@ -14,3 +14,11 @@ export const refreshToken = () =>
       refreshToken: localStorage.getItem('refreshToken'),
     })
     .then((res) => res.data);
+export const getProfile = () =>
+  axios
+    .get(`${API_BASE}/profile`, {
+      headers: {
+        Authorization: localStorage.getItem('token'),
+      },
+    })
+    .then((res) => res.data);
