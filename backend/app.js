@@ -5,6 +5,9 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const path = require('path');
 
+// Import Swagger
+const { swaggerSpec, swaggerUi, swaggerUiOptions } = require('./swagger');
+
 // Import middlewares
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -19,7 +22,17 @@ const commentRoutes = require('./routes/comments');
 const app = express();
 
 // Security middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
@@ -32,13 +45,53 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// API root endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'Welcome to ProjectHub API',
+    version: '1.0.0',
+    documentation: '/api-docs',
+    availableRoutes: [
+      '/api/auth',
+      '/api/projects', 
+      '/api/users',
+      '/api/tasks',
+      '/api/comments',
+      '/api/notifications'
+    ]
+  });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -48,12 +101,12 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/comments', commentRoutes);
 
-
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
-    availableRoutes: ['/api/auth', '/api/projects', '/api/users', '/api/tasks', '/api/comments', '/api/notifications']
+    availableRoutes: ['/api/auth', '/api/projects', '/api/users', '/api/tasks', '/api/comments', '/api/notifications'],
+    documentation: '/api-docs'
   });
 });
 
