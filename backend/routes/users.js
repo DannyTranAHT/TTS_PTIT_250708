@@ -3,6 +3,7 @@ const { auth, authorize } = require('../middlewares/auth');
 const {
   getAllUsers,
   getUserById,
+  getUserByEmail,
   updateUser,
   deactivateUser,
   activateUser,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(auth);
 
 router.get('/', authorize('Admin', 'Project Manager'), getAllUsers);
+router.get('/search/by-email', getUserByEmail);
 router.get('/:id', getUserById);
 router.put('/:id', updateUser);
 router.put('/:id/deactivate', authorize('Admin'), deactivateUser);
