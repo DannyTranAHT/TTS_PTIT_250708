@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const { createNotification } = require('../services/notificationService');
 
 const getAllProjects = async (req, res) => {
   try {

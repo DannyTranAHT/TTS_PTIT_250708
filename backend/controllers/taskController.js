@@ -316,6 +316,56 @@ const confirmCompleteTask = async (req, res) => {
   }
 };
 
+const getMyTasks = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, priority } = req.query;
+
+    const query = {
+      assigned_to_id: req.user._id
+    };
+
+    if (status) query.status = status;
+    if (priority) query.priority = priority;
+
+    const total = await Task.countDocuments(query);
+
+    const tasks = await Task.find(query)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar')
+      .sort({ due_date: 1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    // phần thống kê 
+    const completedTasks = await Task.countDocuments({
+      assigned_to_id: req.user._id,
+      status: 'Completed'
+    });
+
+    const today = new Date();
+
+    const overdueTasks = await Task.countDocuments({
+      assigned_to_id: req.user._id,
+      due_date: { $lt: today },
+      status: { $ne: 'Completed' }
+    });
+
+    res.json({
+      tasks,
+      total,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      completedTasks,
+      overdueTasks
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 module.exports = {
   createTask,
   getAllTasks,
@@ -324,5 +374,6 @@ module.exports = {
   unassignMemberFromTask,
   updateTask,
   requestCompleteTask,
-  confirmCompleteTask
+  confirmCompleteTask,
+  getMyTasks
 };
