@@ -1,13 +1,14 @@
 import './Dashboard.css';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { refreshToken } from '../services/authService';
 import { jwtDecode } from 'jwt-decode';
+import { getAllProjects } from '../services/projectService';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-
+  const [totalProjects, setTotalProjects] = useState(0);
   // 🚀 Load user info từ localStorage khi mount
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -32,6 +33,19 @@ export default function Dashboard() {
       logoutUser();
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await getAllProjects(); // trả về { projects: [...], total: 1, ... }
+        setTotalProjects(res.total);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách project:', error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   // 🧠 Kiểm tra token mỗi 10s và gọi refresh nếu cần
   useEffect(() => {
@@ -86,7 +100,7 @@ export default function Dashboard() {
       <header className="header">
         <div className="header-content">
           <div className="logo">🛠️ Project Hub</div>
-          <div className="user-info">
+          <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             {user ? (
               <>
                 <span>Chào mừng, <strong>{user.full_name}</strong></span>
@@ -110,7 +124,7 @@ export default function Dashboard() {
         </div>
 
         <div className="stats-grid">
-          <StatCard title="Dự án" icon="📁" value={8} change="+2 tuần này" className="projects" />
+          <StatCard title="Dự án" icon="📁" value={totalProjects} change={`+${totalProjects} tuần này`} className="projects" />
           <StatCard title="Task tổng" icon="📋" value={45} change="+7 hôm nay" className="tasks" />
           <StatCard title="Hoàn thành" icon="✅" value={33} change="73% tỷ lệ" className="completed" />
           <StatCard title="Quá hạn" icon="⏰" value={3} change="-1 từ hôm qua" className="overdue" />
@@ -145,7 +159,7 @@ function RecentProjects() {
     <div className="section-card">
       <div className="section-header">
         <h2 className="section-title">Dự án gần đây</h2>
-        <a href="#" className="view-all">Xem tất cả</a>
+        <Link to="/projects" className="view-all">Xem tất cả</Link>
       </div>
       <div className="item-list">
         {[
@@ -178,7 +192,7 @@ function MyTasks() {
     <div className="section-card">
       <div className="section-header">
         <h2 className="section-title">Task của tôi</h2>
-        <a href="#" className="view-all">Xem tất cả</a>
+        <Link to="/tasks" className="view-all">Xem tất cả</Link>
       </div>
       <div className="item-list">
         {[
