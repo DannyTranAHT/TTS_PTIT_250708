@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/models/user_model.dart';
-import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/screens/widgets/top_bar_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -127,11 +127,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     if (_formKey.currentState!.validate() && _validateRole() == null) {
-      final userData = UserData(
+      final userData = User(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         username: _usernameController.text.trim(),
         role: _selectedRole,
+        id: '',
+        avatarUrl: '',
+        joinedDate: DateTime.now(),
+        isActive: true,
       );
 
       Navigator.pushNamed(context, '/register2', arguments: userData);
@@ -160,7 +164,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           child: Column(
             children: [
-              TopBar(title: 'Đăng ký', onPressed: () => Navigator.pop(context)),
+              TopBarAuth(
+                title: 'Đăng ký',
+                onPressed: () => Navigator.pop(context),
+              ),
 
               Expanded(
                 child: Container(

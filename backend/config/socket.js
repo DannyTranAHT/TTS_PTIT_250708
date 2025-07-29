@@ -35,11 +35,7 @@ const initializeSocket = (server) => {
   io.on('connection', (socket) => {
     console.log(`User ${socket.user.username} connected`);
 
-    // Join user to their personal room
     socket.join(`user_${socket.user._id}`);
-
-    // Join project rooms based on user's projects
-    // This would be implemented based on your project membership logic
 
     socket.on('disconnect', () => {
       console.log(`User ${socket.user.username} disconnected`);
