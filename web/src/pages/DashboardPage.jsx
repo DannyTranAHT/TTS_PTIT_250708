@@ -1,8 +1,10 @@
-import Dashboard from "../components/DashboardForm";
+import Dashboard from '../components/layout/DashboardForm';
+import Layout from '../components/layout/Layout';
+
 export default function DashboardPage() {
   return (
-    <div>
-      <Dashboard/>
-    </div>
+    <Layout>
+      <Dashboard />
+    </Layout>
   );
 }
