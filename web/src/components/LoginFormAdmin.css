@@ -1,0 +1,95 @@
+/* Áp dụng nền cho toàn bộ trang đăng nhập admin */
+.login-admin-page {
+  background: #1e293b; /* Màu nền */
+  height: 100vh; /* Chiều cao toàn màn hình */
+  width: 100vw; /* Chiều rộng toàn màn hình */
+  display: flex; /* Sử dụng flexbox để căn giữa nội dung */
+  align-items: center; /* Căn giữa theo chiều dọc */
+  justify-content: center; /* Căn giữa theo chiều ngang */
+  margin: 0; /* Loại bỏ khoảng cách mặc định */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Font chữ mặc định */
+}
+
+/* Container đăng nhập admin */
+.admin-login-container {
+  background: #1e293b;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  padding: 60px;
+  max-width: 600px;
+  min-width: 420px;
+  color: #f1f5f9;
+  transition: transform 0.3s ease;
+}
+
+.admin-login-container:hover {
+  transform: translateY(-2px);
+}
+
+.admin-login-container .admin-logo {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.admin-login-container .admin-logo h1 {
+  font-size: 26px;
+  color: #facc15;
+  margin-bottom: 8px;
+}
+
+.admin-login-container .admin-logo p {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* FORM */
+.admin-login-container .form-group {
+  margin-bottom: 20px;
+}
+
+.admin-login-container .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.admin-login-container .form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 15px;
+  transition: border-color 0.2s ease;
+}
+
+.admin-login-container .form-group input::placeholder {
+  color: #94a3b8;
+}
+
+.admin-login-container .form-group input:focus {
+  outline: none;
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
+  background-color: #1e293b;
+}
+
+/* BUTTON */
+.admin-login-container .admin-login-btn {
+  width: 100%;
+  padding: 14px;
+  background: #facc15;
+  color: #1f2937;
+  font-weight: bold;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.admin-login-container .admin-login-btn:hover {
+  background: #eab308;
+}

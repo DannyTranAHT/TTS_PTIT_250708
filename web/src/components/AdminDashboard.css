@@ -1,0 +1,280 @@
+
+        .main-content-admin-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .main-content-admin-dashboard .welcome-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-content-admin-dashboard .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .main-content-admin-dashboard .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content-admin-dashboard .welcome-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .main-content-admin-dashboard .welcome-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .main-content-admin-dashboard .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .main-content-admin-dashboard .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .main-content-admin-dashboard .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .main-content-admin-dashboard .stat-card.users {
+            border-left-color: #2196F3;
+        }
+
+        .main-content-admin-dashboard .stat-card.projects {
+            border-left-color: #4CAF50;
+        }
+
+        .main-content-admin-dashboard .stat-card.tasks {
+            border-left-color: #FF9800;
+        }
+
+        .main-content-admin-dashboard .stat-card.notifications {
+            border-left-color: #F44336;
+        }
+
+        .main-content-admin-dashboard .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .main-content-admin-dashboard .stat-title {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-content-admin-dashboard .stat-icon {
+            font-size: 24px;
+            opacity: 0.7;
+        }
+
+        .main-content-admin-dashboard .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .main-content-admin-dashboard .stat-change {
+            font-size: 12px;
+            color: #4CAF50;
+        }
+
+        .main-content-admin-dashboard .recent-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .main-content-admin-dashboard .section-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .main-content-admin-dashboard .section-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-content-admin-dashboard .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .main-content-admin-dashboard .view-all {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .main-content-admin-dashboard .view-all:hover {
+            color: #764ba2;
+        }
+
+        .main-content-admin-dashboard .item-list {
+            padding: 0;
+        }
+
+        .main-content-admin-dashboard .item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .main-content-admin-dashboard .item:last-child {
+            border-bottom: none;
+        }
+
+        .main-content-admin-dashboard .item:hover {
+            background: #f8f9fa;
+        }
+
+        .main-content-admin-dashboard .item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+
+        .main-content-admin-dashboard .user-icon {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .main-content-admin-dashboard .project-icon {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .main-content-admin-dashboard .item-content {
+            flex: 1;
+        }
+
+        .main-content-admin-dashboard .item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .main-content-admin-dashboard .item-meta {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+
+        .main-content-admin-dashboard .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-content-admin-dashboard .status-active {
+            background: #e8f5e8;
+            color: #4caf50;
+        }
+
+        .main-content-admin-dashboard .status-overdue {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .main-content-admin-dashboard .quick-actions {
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .main-content-admin-dashboard .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .main-content-admin-dashboard .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .main-content-admin-dashboard .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .main-content-admin-dashboard .recent-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content-admin-dashboard .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content-admin-dashboard .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content-admin-dashboard .item-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
