@@ -12,7 +12,7 @@ export const getAllProjects = () =>
     .then((res) => res.data);
 export const createProject = (data) =>
   axios
-    .post(`${API_BASE}/create`, data, {
+    .post(`${API_BASE}/`, data, {
       headers: {
         Authorization: localStorage.getItem('token'),
       },

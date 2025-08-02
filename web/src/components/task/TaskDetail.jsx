@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import "../../styles/task/taskdetail.css";
 import { useNavigate } from 'react-router-dom';
 import { getProjectById } from "../../services/projectService";
-import { getTaskById, updateTask,requestCompleteTask } from "../../services/taskService";
+import { getTaskById, updateTask,requestCompleteTask,getAllTasks } from "../../services/taskService";
 import { getUserById } from "../../services/userService"; 
-import { getComment } from "../../services/commentService"; 
+import { getComment, createComment, updateComment, deleteComment} from "../../services/commentService"; 
 import { useParams } from 'react-router-dom';
 
 const formatTime = (timestamp) => {
@@ -25,10 +25,14 @@ const TaskDetail = () => {
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState("");
   const [task, setTask] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [project, setProject] = useState([]);
   const [user, setUser] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState(null); // Trạng thái lưu ID bình luận cha khi trả lời
+  const [suggestedTasks, setSuggestedTasks] = useState([]); // Danh sách task gợi ý
+  const [showSuggestions, setShowSuggestions] = useState(false); // Trạng thái hiển thị gợi ý
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,7 +45,11 @@ const TaskDetail = () => {
       // Lấy thông tin dự án sử dụng project_id của task
       const projectRes = await getProjectById(taskRes.task.project_id);
       setProject(projectRes.project);
-      console.log('Project:', projectRes.project);
+
+      // Lấy danh sách task trong dự án
+      const tasksRes = await getAllTasks(projectRes.project._id);
+      setTasks(tasksRes.tasks || []);
+      console.log('Danh sách task:', tasksRes.tasks);
 
       // Lấy thông tin người dùng sử dụng user_id của task
       const userRes = await getUserById(taskRes.task.assigned_to_id);
@@ -49,8 +57,8 @@ const TaskDetail = () => {
 
       // Lấy danh sách bình luận của task
       const commentsRes = await getComment(taskRes.task._id);
-      setComments(commentsRes.comments);
-      
+      setComments(commentsRes.comments || []);
+
     } catch (error) {
       console.error('Lỗi khi lấy thông tin:', error);
     }
@@ -76,7 +84,7 @@ const TaskDetail = () => {
     );
   }, []);
 
-  const addComment = () => {
+  const addComment = async () => {
     const content = commentInput.trim();
     if (!content) {
       alert("Vui lòng nhập nội dung bình luận");
@@ -84,15 +92,40 @@ const TaskDetail = () => {
     }
 
     const newComment = {
-      id: comments.length + 1,
-      author: "Nguyễn Văn A",
-      avatar: "NA",
-      content,
-      timestamp: Date.now(),
-      time: "Vừa xong",
+      entity_type: "Task",
+      entity_id: task?._id,
+      content: content,
+      parent_id: replyTo || null, // Nếu đang trả lời, gửi parent_id
     };
-    setComments([...comments, newComment]);
-    setCommentInput("");
+
+    if (!newComment.entity_id || newComment.entity_id.length !== 24) {
+      alert("ID của task không hợp lệ");
+      return;
+    }
+
+    try {
+      const createCommentRes = await createComment(newComment);
+
+      // Nếu là trả lời, thêm vào replies của bình luận cha
+      if (replyTo) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c._id === replyTo
+              ? { ...c, replies: [...(c.replies || []), createCommentRes.comment] }
+              : c
+          )
+        );
+      } else {
+        // Nếu là bình luận gốc, thêm vào danh sách bình luận
+        setComments([...comments, createCommentRes.comment]);
+      }
+
+      setCommentInput("");
+      setReplyTo(null); // Reset trạng thái trả lời
+    } catch (error) {
+      console.error("Lỗi khi tạo bình luận:", error.response?.data || error.message);
+      alert("Không thể tạo bình luận. Vui lòng thử lại!");
+    }
   };
 
   const cancelComment = () => setCommentInput("");
@@ -120,6 +153,17 @@ const TaskDetail = () => {
       alert("Cập nhật thất bại!");
     }
   };
+  const deleteCommentHandler = async (commentId) => {
+    try {
+      await deleteComment(commentId);
+      setComments(comments.filter((c) => c._id !== commentId));
+      alert("Bình luận đã được xóa thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xóa bình luận:", error.response?.data || error.message
+      );
+      alert("Không thể xóa bình luận. Vui lòng thử lại!");
+    }
+  };
   const handleCompleteTask = async () => {
     setIsConfirmModalOpen(true);
   };
@@ -135,6 +179,32 @@ const confirmCompleteTask = async () => {
   } finally {
     setIsConfirmModalOpen(false);
   }
+};
+
+const handleCommentInputChange = (e) => {
+  const value = e.target.value;
+  setCommentInput(value);
+
+  // Kiểm tra nếu nhập `#`
+  const lastWord = value.split(" ").pop();
+  if (lastWord.startsWith("#")) {
+    const keyword = lastWord.slice(1).toLowerCase(); // Lấy từ khóa sau `#`
+    const filteredTasks = tasks.filter((task) =>
+      task.name.toLowerCase().includes(keyword)
+    );
+    setSuggestedTasks(filteredTasks);
+    setShowSuggestions(true);
+  } else {
+    setShowSuggestions(false);
+  }
+};
+
+const handleSuggestionClick = (task) => {
+  // Thay thế `#` bằng ID của task trong comment
+  const words = commentInput.split(" ");
+  words[words.length - 1] = `[${task.name}](#${task._id})`;
+  setCommentInput(words.join(" "));
+  setShowSuggestions(false);
 };
 
   return (
@@ -253,11 +323,24 @@ const confirmCompleteTask = async () => {
                 className="comment-input"
                 placeholder="Viết bình luận..."
                 value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
+                onChange={handleCommentInputChange}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.ctrlKey) addComment();
                 }}
               />
+              {showSuggestions && (
+                <div className="suggestions-list">
+                  {suggestedTasks.map((task) => (
+                    <div
+                      key={task._id}
+                      className="suggestion-item"
+                      onClick={() => handleSuggestionClick(task)}
+                    >
+                      {task.name} (#{task._id})
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="comment-actions">
                 <button className="comment-btn" onClick={cancelComment}>
                   Hủy
@@ -280,7 +363,84 @@ const confirmCompleteTask = async () => {
                       <span className="comment-author">{c.user_id?.full_name || "Người dùng không xác định"}</span>
                       <span className="comment-time">{new Date(c.created_at).toLocaleString()}</span>
                     </div>
-                    <div className="comment-text">{c.content}</div>
+                    <div className="comment-text">
+                      {c.content.split(/(\[.*?\]\(#.*?\))/g).map((part, index) => {
+                        const match = part.match(/\[(.*?)\]\(#(.*?)\)/);
+                        if (match) {
+                          const [_, name, id] = match;
+                          return (
+                            <a key={index} href={`/tasks/${id}`} className="task-link">
+                              {name}
+                            </a>
+                          );
+                        }
+                        return part;
+                      })}
+                    </div>
+                    <div className="comment-actions">
+                      {currentUser?._id === c.user_id?._id && (
+                        <button
+                          className="comment-delete-btn"
+                          onClick={() => deleteCommentHandler(c._id)}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      )}
+                      <button
+                        className="comment-reply-btn"
+                        onClick={() => setReplyTo(c._id)} // Đặt trạng thái trả lời
+                      >
+                        💬 Trả lời
+                      </button>
+                    </div>
+
+                    {/* Hiển thị ô nhập bình luận nếu đang trả lời bình luận này */}
+                    {replyTo === c._id && (
+                      <div className="reply-form">
+                        <textarea
+                          className="reply-input"
+                          placeholder="Viết trả lời..."
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                        />
+                        <div className="reply-actions">
+                          <button
+                            className="reply-btn cancel"
+                            onClick={() => setReplyTo(null)} // Hủy trả lời
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            className="reply-btn send"
+                            onClick={addComment} // Gửi trả lời
+                          >
+                            Gửi
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hiển thị danh sách trả lời */}
+                    {c.replies && c.replies.length > 0 && (
+                      <div className="replies-list">
+                        {c.replies.map((reply) => (
+                          <div key={reply._id} className="reply-item">
+                            <div className="reply-avatar">
+                              {reply.user_id?.full_name
+                                ? `${reply.user_id.full_name.split(" ")[0][0]}${reply.user_id.full_name.split(" ").slice(-1)[0][0]}`
+                                : ""}
+                            </div>
+                            <div className="reply-content">
+                              <div className="reply-header">
+                                <span className="reply-author">{reply.user_id?.full_name || "Người dùng không xác định"}</span>
+                                <span className="reply-time">{new Date(reply.created_at).toLocaleString()}</span>
+                              </div>
+                              <div className="reply-text">{reply.content}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

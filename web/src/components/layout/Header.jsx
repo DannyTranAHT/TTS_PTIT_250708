@@ -73,7 +73,7 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-content">
-        <div className="logo">🛠️ Project Hub</div>
+        <div className="logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>🛠️ Project Hub</div>
          <div className="user-info" >
           {user ? (
               <>

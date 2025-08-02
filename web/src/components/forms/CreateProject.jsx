@@ -42,29 +42,30 @@ const CreateProject = () => {
     setSelectedMembers(selectedMembers.filter((id) => id !== memberId));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     const form = e.target;
 
     const newProject = {
-      id: Date.now(),
-      name: form.name.value,
-      description: form.description.value,
-      start_date: form.start_date.value || null,
-      end_date: form.end_date.value,
-      status: form.status.value,
-      priority: form.priority.value,
-      owner_id: 'NA',
-      members: selectedMembers,
-      progress: 0,
-      budget: parseFloat(form.budget.value) || 0,
-      is_archived: false,
-      created_at: new Date().toISOString()
+      name: form.name.value, // Tên dự án
+      description: form.description.value, // Mô tả
+      start_date: form.start_date.value || null, // Ngày bắt đầu
+      end_date: form.end_date.value, // Ngày kết thúc
+      status: form.status.value, // Trạng thái
+      priority: form.priority.value, // Mức độ ưu tiên
+      members: selectedMembers, // Danh sách thành viên
+      budget: parseFloat(form.budget.value) || 0, // Ngân sách
     };
 
-    console.log('New Project:', newProject);
+    try {
+    const response = await createProject(newProject); // Gửi dữ liệu đến API
+    console.log('New Project:', response.data);
     alert('Dự án đã được tạo thành công!');
-    window.location.href = '/projectmanagement.html';
+    window.location.href = '/projects'; // Chuyển hướng đến trang danh sách dự án
+  } catch (error) {
+    console.error('Error creating project:', error);
+    alert('Có lỗi xảy ra khi tạo dự án. Vui lòng thử lại!');
+  }
   };
 
   useEffect(() => {
@@ -180,7 +181,7 @@ const CreateProject = () => {
 
             <div className="form-actions">
               <button type="submit" className="submit-btn">Tạo Dự án</button>
-              <button type="button" className="cancel-btn" onClick={() => window.location.href = '/projectmanagement.html'}>Hủy</button>
+              <button type="button" className="cancel-btn" onClick={() => navigator('/projects')}>Hủy</button>
             </div>
           </form>
         </div>

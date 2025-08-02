@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import '../../styles/project/projectdetail.css';
 import { useParams } from 'react-router-dom';
-import { getProjectById } from '../../services/projectService';
+import { getProjectById, addMemberToProject, removeMemberFromProject} from '../../services/projectService';
+import { getAllUsers } from '../../services/userService'; // Lấy danh sách người dùng
 import { getAllTasks } from '../../services/taskService';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,11 @@ const ProjectDetail = () => {
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [pagination, setPagination] = useState({});
+  const [showInviteModal, setShowInviteModal] = useState(false); // State để hiển thị modal
+  const [availableMembers, setAvailableMembers] = useState([]); // Danh sách người dùng
+  const [selectedMemberId, setSelectedMemberId] = useState(''); // ID của thành viên được mời
+  const [showRemoveModal, setShowRemoveModal] = useState(false); // Hiển thị modal xóa
+  const [selectedMember, setSelectedMember] = useState(null); // Thành viên được chọn để xóa
   const navigator = useNavigate();
 
   useEffect(() => {
@@ -28,7 +34,6 @@ const ProjectDetail = () => {
       try {
         const res = await getAllTasks(id, page);
         setTasks(res.tasks);
-        console.log('Tasks:', res.tasks);
         setPagination({
           currentPage: res.currentPage,
           totalPages: res.totalPages,
@@ -39,8 +44,19 @@ const ProjectDetail = () => {
       }
     };
 
+    // Lấy danh sách người dùng
+    const fetchUsers = async () => {
+      try {
+        const res = await getAllUsers();
+        setAvailableMembers(res.users); // Lưu danh sách người dùng
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách người dùng:', error);
+      }
+    };
+
     fetchProject();
     fetchTasks();
+    fetchUsers();
   }, [id]);
 
   const handlePageChange = (page) => {
@@ -63,6 +79,45 @@ const ProjectDetail = () => {
 
     // Thêm lớp 'active' vào nút tab được chọn
     document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+  };
+
+  const handleInviteMember = async () => {
+    try {
+      await addMemberToProject(id, selectedMemberId); // Gửi yêu cầu mời thành viên bằng ID
+      alert('Đã mời thành viên thành công!');
+      setSelectedMemberId('');
+      setShowInviteModal(false);
+
+      // Gọi lại API để cập nhật danh sách thành viên
+      const updatedProject = await getProjectById(id);
+      setProject(updatedProject.project); // Cập nhật state project
+    } catch (error) {
+      console.error('Lỗi khi mời thành viên:', error);
+      alert('Có lỗi xảy ra khi mời thành viên. Vui lòng thử lại!');
+    }
+  };
+
+  const handleRemoveMemberClick = (member) => {
+    setSelectedMember(member); // Lưu thông tin thành viên được chọn
+    setShowRemoveModal(true); // Hiển thị modal
+  };
+
+  const handleConfirmRemoveMember = async () => {
+    try {
+      await removeMemberFromProject(id, selectedMember._id); // Gửi yêu cầu xóa thành viên
+      alert(`Đã xóa thành viên ${selectedMember.full_name} khỏi dự án.`);
+      setShowRemoveModal(false); // Đóng modal
+      setSelectedMember(null); // Xóa thông tin thành viên được chọn
+
+      // Cập nhật danh sách thành viên
+      setProject((prevProject) => ({
+        ...prevProject,
+        members: prevProject.members.filter((m) => m._id !== selectedMember._id),
+      }));
+    } catch (error) {
+      console.error('Lỗi khi xóa thành viên:', error);
+      alert('Có lỗi xảy ra khi xóa thành viên. Vui lòng thử lại!');
+    }
   };
 
   if (!project) {
@@ -152,7 +207,7 @@ const ProjectDetail = () => {
           <div className="tasks-section">
             <div className="section-header">
               <h3 className="section-title">Quản lý Tasks</h3>
-              <button className="action-btn primary" onClick={() => navigator('/tasks/create')}>➕ Thêm task</button>
+              <button className="action-btn primary" onClick={() => navigator('/tasks/create', { state: { projectId: id } })}>➕ Thêm task</button>
             </div>
             <div className="task-board">
               {tasks.map((task) => (
@@ -188,7 +243,7 @@ const ProjectDetail = () => {
           <div className="team-section">
             <div className="section-header">
               <h3 className="section-title">Thành viên dự án</h3>
-              <button className="action-btn primary">➕ Mời thành viên</button>
+              <button className="action-btn primary" onClick={() => setShowInviteModal(true)}>➕ Mời thành viên</button>
             </div>
             <div className="team-grid">
               {project.members?.map((member) => (
@@ -196,11 +251,76 @@ const ProjectDetail = () => {
                   <div className="team-avatar">{member.full_name[0]}</div>
                   <div className="team-name">{member.full_name}</div>
                   <div className="team-role">Thành viên</div>
+                  <button
+                    className="remove-member-btn"
+                    onClick={() => handleRemoveMemberClick(member)} // Gọi hàm trung gian
+                  >
+                    ✖
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Modal mời thành viên */}
+        {showInviteModal && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>Mời thành viên</h3>
+              <select
+                value={selectedMemberId}
+                onChange={(e) => setSelectedMemberId(e.target.value)}
+              >
+                <option value="">Chọn thành viên</option>
+                {availableMembers.map((member) => (
+                  <option key={member._id} value={member._id}>
+                    {member.full_name} ({member.email})
+                  </option>
+                ))}
+              </select>
+              <div className="modal-actions">
+                <button
+                  className="action-btn primary"
+                  onClick={handleInviteMember}
+                  disabled={!selectedMemberId}
+                >
+                  Mời
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => setShowInviteModal(false)}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal xác nhận xóa thành viên */}
+        {showRemoveModal && selectedMember && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>Xác nhận xóa thành viên</h3>
+              <p>Bạn có chắc chắn muốn xóa thành viên <strong>{selectedMember.full_name}</strong> khỏi dự án không?</p>
+              <div className="modal-actions">
+                <button
+                  className="action-btn primary"
+                  onClick={handleConfirmRemoveMember}
+                >
+                  Xóa
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => setShowRemoveModal(false)}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
