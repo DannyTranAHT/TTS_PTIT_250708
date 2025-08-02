@@ -1,5 +1,6 @@
 const express = require('express');
 const { auth } = require('../middlewares/auth');
+const { validate, commentSchemas } = require('../middlewares/validation');
 const {
   getComments,
   createComment,
@@ -13,8 +14,8 @@ const router = express.Router();
 router.use(auth);
 
 router.get('/', getComments);
-router.post('/', createComment);
-router.put('/:id', updateComment);
+router.post('/',validate(commentSchemas.create), createComment);
+router.put('/:id',validate(commentSchemas.update), updateComment);
 router.delete('/:id', deleteComment);
 
 module.exports = router;
