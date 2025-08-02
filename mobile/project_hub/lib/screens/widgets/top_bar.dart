@@ -1,48 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/res/images/app_images.dart';
 
 class TopBar extends StatelessWidget {
-  const TopBar({
-    super.key,
-    required this.title,
-    required this.onPressed,
-    this.isBack = false,
-  });
-  final String title;
+  const TopBar({super.key, this.isBack = false});
   final bool isBack;
-  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 80.h,
-      width: 393.w,
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      // decoration: BoxDecoration(color: Colors.white),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          isBack
-              ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios,
-                  color: Color(0xFF764BA2),
-                  size: 24.sp,
-                ),
-                onPressed: onPressed,
-              )
-              : SizedBox(width: 24.w),
-          Text(
-            title,
-            style: TextStyle(
-              color: Color(0xFF764BA2),
-              fontSize: 32.sp,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(width: 24.w),
-        ],
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.fromARGB(255, 111, 136, 246),
+            Color(0xFF667EEA),
+            Color(0xFF764BA2),
+          ],
+        ),
       ),
+      child:
+          isBack
+              ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 24.sp,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 28.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      CircleAvatar(
+                        radius: 20.r,
+                        backgroundImage: AssetImage(AppImages.avt),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 28.sp,
+                  ),
+                  CircleAvatar(
+                    radius: 20.r,
+                    backgroundImage: AssetImage(AppImages.avt),
+                  ),
+                ],
+              ),
     );
   }
 }

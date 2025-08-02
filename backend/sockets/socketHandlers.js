@@ -4,7 +4,6 @@ const Project = require('../models/Project');
 const { createNotification } = require('../services/notificationService');
 
 const setupSocketHandlers = (io) => {
-  // Socket authentication middleware
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;

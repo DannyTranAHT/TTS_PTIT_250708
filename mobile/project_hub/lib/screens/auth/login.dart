@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/screens/register.dart';
-import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/screens/home/home.dart';
+import 'package:project_hub/screens/auth/register.dart';
+import 'package:project_hub/screens/widgets/top_bar_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -100,6 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     Future.delayed(Duration(seconds: 2), () {
       Navigator.of(context).pop();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -129,8 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Column(
             children: [
-              TopBar(title: 'Đăng nhập', onPressed: () {}),
-
+              TopBarAuth(title: 'Đăng nhập', onPressed: () {}),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(

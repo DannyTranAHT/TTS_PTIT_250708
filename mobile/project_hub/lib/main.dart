@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/screens/login.dart';
-import 'package:project_hub/screens/register.dart';
-import 'package:project_hub/screens/register2.dart';
-import 'package:project_hub/screens/start.dart';
+import 'package:project_hub/screens/auth/login.dart';
+import 'package:project_hub/screens/auth/register.dart';
+import 'package:project_hub/screens/auth/register2.dart';
+import 'package:project_hub/screens/start/start.dart';
 
 void main() {
   runApp(const MyApp());

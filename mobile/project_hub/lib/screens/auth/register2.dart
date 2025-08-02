@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/models/user_model.dart';
-import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/screens/widgets/top_bar_auth.dart';
 
 class RegisterScreen2 extends StatefulWidget {
   @override
@@ -23,7 +23,7 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
   bool _obscureConfirmPassword = true;
   bool _isSubmitted = false;
 
-  UserData? userData;
+  User? userData;
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (userData == null) {
-      userData = ModalRoute.of(context)?.settings.arguments as UserData?;
+      userData = ModalRoute.of(context)?.settings.arguments as User?;
     }
   }
 
@@ -144,7 +144,7 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
           ),
           child: Column(
             children: [
-              TopBar(
+              TopBarAuth(
                 title: 'Đăng ký',
                 onPressed: () => Navigator.pop(context),
                 isBack: true,

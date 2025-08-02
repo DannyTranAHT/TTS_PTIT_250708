@@ -97,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
                   scale: _scaleAnimation,
                   child: Container(
                     width: 320.w,
-                    height: 300.h,
+                    height: 320.h,
                     child: Image.asset(AppImages.starticon, fit: BoxFit.cover),
                   ),
                 ),
