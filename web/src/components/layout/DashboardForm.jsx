@@ -1,9 +1,15 @@
 import '../../styles/layout/Dashboard.css';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+<<<<<<< HEAD:web/src/components/DashboardForm.jsx
+import { refreshToken } from '../services/authService';
+import { jwtDecode } from 'jwt-decode';
+import { getAllProjects } from '../services/projectService';
+=======
 import { refreshToken } from '../../services/authService';
 import { jwtDecode } from 'jwt-decode';
 import { getAllProjects } from '../../services/projectService';
+>>>>>>> f6b796defd0e13f051653ecfffc04fc187e4f359:web/src/components/layout/DashboardForm.jsx
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);

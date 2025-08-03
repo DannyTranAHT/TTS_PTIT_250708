@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/models/user_model.dart';
-import 'package:project_hub/screens/widgets/top_bar_auth.dart';
+import 'package:project_hub/screens/home/home.dart';
+import 'package:provider/provider.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
+import '../widgets/top_bar_auth.dart';
 
 class RegisterScreen2 extends StatefulWidget {
+  const RegisterScreen2({super.key});
+
   @override
-  _RegisterScreen2State createState() => _RegisterScreen2State();
+  State<RegisterScreen2> createState() => _RegisterScreen2State();
 }
 
 class _RegisterScreen2State extends State<RegisterScreen2> {
@@ -57,11 +62,11 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
   }
 
   void _scrollToShowField(double offset) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           offset,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
@@ -107,239 +112,266 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
     return null;
   }
 
-  void _register() {
-    FocusScope.of(context).unfocus();
+  String? _validateMajor(String? value) {
+    if (!_isSubmitted) return null;
 
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập chuyên ngành';
+    }
+    return null;
+  }
+
+  Future<void> _handleRegister() async {
     setState(() {
       _isSubmitted = true;
     });
 
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đăng ký thành công!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    if (!_formKey.currentState!.validate() || userData == null) return;
 
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await authProvider.register(
+      username: userData!.username,
+      email: userData!.email,
+      fullName: userData!.fullName,
+      password: _passwordController.text,
+      role: userData!.role,
+      major:
+          _majorController.text.trim().isNotEmpty
+              ? _majorController.text.trim()
+              : null,
+    );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng ký thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Đăng ký thất bại'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    if (userData == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Color(0xFFF5F5F5),
-        resizeToAvoidBottomInset: true,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFF5F5F5), Color(0xFF6C63FF).withOpacity(0.1)],
-            ),
-          ),
-          child: Column(
+    return Scaffold(
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          return Stack(
             children: [
-              TopBarAuth(
-                title: 'Đăng ký',
-                onPressed: () => Navigator.pop(context),
-                isBack: true,
-              ),
-
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
+                  children: [
+                    TopBarAuth(
+                      title: 'Hoàn tất đăng ký',
+                      isBack: true,
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.all(18.r),
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          bottom: keyboardHeight > 0 ? 20.h : 0,
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height - 200.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30.r),
+                          topRight: Radius.circular(30.r),
                         ),
-                        padding: EdgeInsets.only(
-                          left: 32.w,
-                          right: 32.w,
-                          top: 16.h,
-                          bottom: 16.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Project Hub',
-                              style: TextStyle(
-                                fontSize: 28.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2D2D2D),
-                              ),
-                            ),
-                            Text(
-                              'Quản lý dự án thông minh',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(24.w),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 30.h),
 
-                            SizedBox(height: 30.h),
-
-                            _buildTextField(
-                              'Mật khẩu',
-                              'Nhập mật khẩu',
-                              _passwordController,
-                              _passwordFocusNode,
-                              _validatePassword,
-                              TextInputAction.next,
-                              isPassword: true,
-                              obscureText: _obscurePassword,
-                              onToggleObscure: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                              onSubmitted:
-                                  (_) => FocusScope.of(
-                                    context,
-                                  ).requestFocus(_confirmPasswordFocusNode),
-                            ),
-                            SizedBox(height: 16.h),
-
-                            _buildTextField(
-                              'Xác nhận mật khẩu',
-                              'Xác nhận mật khẩu',
-                              _confirmPasswordController,
-                              _confirmPasswordFocusNode,
-                              _validateConfirmPassword,
-                              TextInputAction.next,
-                              isPassword: true,
-                              obscureText: _obscureConfirmPassword,
-                              onToggleObscure: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                              onSubmitted:
-                                  (_) => FocusScope.of(
-                                    context,
-                                  ).requestFocus(_majorFocusNode),
-                            ),
-                            SizedBox(height: 16.h),
-
-                            _buildTextField(
-                              'Chuyên ngành của bạn',
-                              'Không bắt buộc',
-                              _majorController,
-                              _majorFocusNode,
-                              null,
-                              TextInputAction.done,
-                              onSubmitted:
-                                  (_) => FocusScope.of(context).unfocus(),
-                            ),
-
-                            SizedBox(height: 48.h),
-
-                            Container(
-                              width: double.infinity,
-                              height: 56.h,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFF6C63FF),
-                                    Color(0xFF8B5FBF),
+                              // User Info Summary
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.all(16.w),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(
+                                    color: const Color(0xFFE9ECEF),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Thông tin tài khoản:',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF2D2D2D),
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      'Tên: ${userData!.fullName}',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      'Email: ${userData!.email}',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      'Vai trò: ${userData!.role}',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: ElevatedButton(
-                                onPressed: _register,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Đăng ký',
-                                  style: TextStyle(
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
 
-                            SizedBox(height: 20.h),
-                            Text(
-                              'hoặc',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14.sp,
+                              SizedBox(height: 24.h),
+
+                              // Password Field
+                              _buildTextField(
+                                'Mật khẩu',
+                                'Nhập mật khẩu mới',
+                                _passwordController,
+                                _passwordFocusNode,
+                                _validatePassword,
+                                TextInputAction.next,
+                                isPassword: true,
+                                obscureText: _obscurePassword,
+                                onToggleObscure: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                                onSubmitted:
+                                    (_) =>
+                                        _confirmPasswordFocusNode
+                                            .requestFocus(),
                               ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Đã có tài khoản? ',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/login');
-                                  },
-                                  child: Text(
-                                    'Đăng nhập ngay',
-                                    style: TextStyle(
-                                      color: Color(0xFF6C63FF),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14.sp,
+
+                              SizedBox(height: 20.h),
+
+                              // Confirm Password Field
+                              _buildTextField(
+                                'Xác nhận mật khẩu',
+                                'Nhập lại mật khẩu',
+                                _confirmPasswordController,
+                                _confirmPasswordFocusNode,
+                                _validateConfirmPassword,
+                                TextInputAction.next,
+                                isPassword: true,
+                                obscureText: _obscureConfirmPassword,
+                                onToggleObscure: () {
+                                  setState(() {
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
+                                  });
+                                },
+                                onSubmitted:
+                                    (_) => _majorFocusNode.requestFocus(),
+                              ),
+
+                              SizedBox(height: 20.h),
+
+                              // Major Field
+                              _buildTextField(
+                                'Chuyên ngành',
+                                'VD: Công nghệ thông tin',
+                                _majorController,
+                                _majorFocusNode,
+                                _validateMajor,
+                                TextInputAction.done,
+                                onSubmitted: (_) => _handleRegister(),
+                              ),
+
+                              SizedBox(height: 40.h),
+
+                              // Register Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 56.h,
+                                child: ElevatedButton(
+                                  onPressed:
+                                      authProvider.isLoading
+                                          ? null
+                                          : _handleRegister,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6C63FF),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
                                     ),
                                   ),
+                                  child:
+                                      authProvider.isLoading
+                                          ? SizedBox(
+                                            width: 24.w,
+                                            height: 24.w,
+                                            child:
+                                                const CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                  strokeWidth: 2,
+                                                ),
+                                          )
+                                          : Text(
+                                            'Hoàn tất đăng ký',
+                                            style: TextStyle(
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                 ),
-                              ],
-                            ),
+                              ),
 
-                            SizedBox(height: keyboardHeight > 0 ? 100.h : 0),
-                          ],
+                              SizedBox(
+                                height:
+                                    userData!.role == 'Employee' ? 50.h : 100.h,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -364,44 +396,36 @@ class _RegisterScreen2State extends State<RegisterScreen2> {
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2D2D2D),
+            color: const Color(0xFF2D2D2D),
           ),
         ),
         SizedBox(height: 8.h),
-        Container(
-          height: 56.h,
-          padding: EdgeInsets.only(top: 16.h),
-          decoration: BoxDecoration(
-            color: Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFFE9ECEF)),
-          ),
-          child: TextFormField(
-            controller: controller,
-            focusNode: focusNode,
-            validator: validator,
-            textInputAction: textInputAction,
-            obscureText: isPassword && obscureText,
-            onFieldSubmitted: onSubmitted,
-            style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
-              errorStyle: TextStyle(fontSize: 12.sp),
-              suffixIcon:
-                  isPassword
-                      ? IconButton(
-                        icon: Icon(
-                          obscureText ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey[600],
-                          size: 24.sp,
-                        ),
-                        onPressed: onToggleObscure,
-                      )
-                      : null,
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          validator: validator,
+          textInputAction: textInputAction,
+          obscureText: isPassword && obscureText,
+          onFieldSubmitted: onSubmitted,
+          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF2D2D2D)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
             ),
+            suffixIcon:
+                isPassword
+                    ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey[600],
+                        size: 24.sp,
+                      ),
+                      onPressed: onToggleObscure,
+                    )
+                    : null,
           ),
         ),
       ],

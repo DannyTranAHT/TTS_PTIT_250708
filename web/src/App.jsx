@@ -14,7 +14,6 @@ import MyTasksPage from './pages/MyTasksPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRoute from './components/AdminRoute';
 import EditProfilePage from './pages/EditProfilePage';
-
 export default function App() {
   return (
     <Router>
@@ -24,6 +23,13 @@ export default function App() {
         <Route path="/admin/login" element={<LoginAdminPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/projects" element={<ProjectListPage />} />
+        <Route path="/projects/projectdetail" element={<ProjectDetail />} />
+        <Route path="/projects/create" element={<CreateProject />} />
+        <Route path="/tasks/taskdetail" element={<TaskDetailPage />} />
+        <Route path="/tasks/create" element={<CreateTaskPage />} />
+        <Route path="/tasks" element={<MyTasksPage />} />
         <Route path="/editprofile" element={<EditProfilePage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<ProjectListPage />} />
