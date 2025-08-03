@@ -1,9 +1,15 @@
-import './Dashboard.css';
+import '../../styles/layout/Dashboard.css';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+<<<<<<< HEAD:web/src/components/DashboardForm.jsx
 import { refreshToken } from '../services/authService';
 import { jwtDecode } from 'jwt-decode';
 import { getAllProjects } from '../services/projectService';
+=======
+import { refreshToken } from '../../services/authService';
+import { jwtDecode } from 'jwt-decode';
+import { getAllProjects } from '../../services/projectService';
+>>>>>>> f6b796defd0e13f051653ecfffc04fc187e4f359:web/src/components/layout/DashboardForm.jsx
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -82,7 +88,7 @@ export default function Dashboard() {
           logoutUser();
         }
       }
-    }, 10000);
+    }, 9000000); // 15 phút
 
     return () => clearInterval(interval);
   }, []);
@@ -97,7 +103,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <header className="header">
+      {/* <header className="header">
         <div className="header-content">
           <div className="logo">🛠️ Project Hub</div>
           <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
@@ -113,7 +119,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </header>
+      </header> */}
 
       <main className="main-content">
         <div className="welcome-section">

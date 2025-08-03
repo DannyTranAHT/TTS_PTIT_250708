@@ -86,7 +86,9 @@ const commentSchemas = {
     entity_id: Joi.string().length(24).required(),
     content: Joi.string().required(),
     parent_id: Joi.string().length(24).optional(),
-    attachments: Joi.string().optional().allow(null) // stored as JSON string
+    attachments: Joi.string().optional().allow(null),
+
+    parent_id: Joi.string().length(24).optional().allow(null),
   }),
 
   update: Joi.object({

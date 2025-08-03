@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import './LoginForm.css';
-import { loginUser, getProfile } from '../services/authService'; // 👉 thêm getProfile
-import { Link, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import './LoginFormAdmin.css';
+import { loginUser, getProfile } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
-export default function LoginForm() {
+export default function LoginFormAdmin() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -14,26 +13,25 @@ export default function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       setLoading(true);
       const { email, password } = formData;
 
-      // 🔐 Gọi API đăng nhập để lấy token
       const response = await loginUser({ email, password });
-
-      // ✅ Lưu token và refreshToken vào localStorage
       localStorage.setItem('token', response.token);
       localStorage.setItem('refreshToken', response.refreshToken);
 
-      // 📥 Gọi API getProfile để lấy thông tin người dùng
       const profileResponse = await getProfile();
+      const user = profileResponse.user;
 
-      // ✅ Lưu thông tin user vào localStorage
-      localStorage.setItem('user', JSON.stringify(profileResponse.user));
+      if (user.role !== 'Admin') {
+        alert('Tài khoản không có quyền truy cập trang quản trị.');
+        return;
+      }
 
-      alert('Đăng nhập thành công!');
-      navigate('/dashboard');
+      localStorage.setItem('user', JSON.stringify(user));
+      alert('Đăng nhập admin thành công!');
+      navigate('/admin/dashboard');
     } catch (err) {
       alert(err.response?.data?.message || 'Đăng nhập thất bại!');
     } finally {
@@ -42,15 +40,15 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="login-container">
-      <div className="logo">
-        <h1>🛠️ Project Hub</h1>
-        <p>Quản lý dự án thông minh</p>
+    <div className="admin-login-container">
+      <div className="admin-logo">
+        <h1>🔐 Admin Portal</h1>
+        <p>Chào mừng quay lại trang quản trị</p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Email</label>
+          <label>Email quản trị</label>
           <input
             type="email"
             name="email"
@@ -71,20 +69,10 @@ export default function LoginForm() {
           />
         </div>
 
-        <button className="login-btn" disabled={loading}>
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        <button className="admin-login-btn" disabled={loading}>
+          {loading ? 'Đang xác minh...' : 'Đăng nhập Admin'}
         </button>
-
-        <div className="forgot-password">
-          <Link to="/forgot-password">Quên mật khẩu?</Link>
-        </div>
       </form>
-
-      <div className="divider"><span>hoặc</span></div>
-
-      <div className="register-link">
-        <p>Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></p>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import './RegisterForm.css';
-import { registerUser } from '../services/authService';
+import '../../styles/forms/RegisterForm.css';
+import { registerUser } from '../../services/authService';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
