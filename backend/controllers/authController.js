@@ -3,16 +3,18 @@ const User = require('../models/User');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '1d'
+    expiresIn: process.env.JWT_EXPIRE || '1h' // Thời gian hết hạn của token
   });
 };
 
 // Thêm hàm sinh refresh token
 const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d'
+  const issuedAt = Math.floor(Date.now() / 1000);
+  return jwt.sign({ id, iat: issuedAt }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '3h' // Thời gian hết hạn của refresh token
   });
 };
+
 
 const register = async (req, res) => {
   try {
@@ -55,8 +57,23 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
+    const { email, username, password } = req.body;
+    if(username && password) {
+      // Login by username
+      const user = await User.findOne({ username }).select('+password');
+      if (!user || !await user.comparePassword(password)) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
+     
+      const token = generateToken(user._id);
+      const refreshToken = generateRefreshToken(user._id);
+      return res.json({
+        message: 'Login successful',
+        token,
+        refreshToken,
+        user: user.toJSON()
+      });
+    }
     // Find user
     const user = await User.findOne({ email }).select('+password');
     
@@ -89,6 +106,17 @@ const refreshTokenHandler = (req, res) => {
   }
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Kiểm tra thời gian hợp lệ trong 2 ngày
+    const issuedAt = decoded.iat * 1000; // Chuyển từ giây sang milliseconds
+    const now = Date.now();
+    const twoDaysInMs = 2 * 24 * 60 * 60 * 1000; // 2 ngày (milliseconds)
+
+    if (now - issuedAt > twoDaysInMs) {
+      return res.status(401).json({ message: 'Refresh token expired after 2 days' });
+    }
+
+    // Tạo Access Token mới
     const newToken = generateToken(decoded.id);
     res.json({ token: newToken });
   } catch (error) {

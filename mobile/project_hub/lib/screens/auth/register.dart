@@ -1,57 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/models/user_model.dart';
-import 'package:project_hub/screens/widgets/top_bar_auth.dart';
+import 'package:project_hub/screens/auth/register2.dart';
+import '../../models/user_model.dart';
+import '../widgets/top_bar_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _scrollController = ScrollController();
 
-  final _nameFocusNode = FocusNode();
-  final _emailFocusNode = FocusNode();
   final _usernameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _fullNameFocusNode = FocusNode();
 
-  String _selectedRole = 'Chọn vai trò';
-  bool _isSubmitted = false; // Thêm biến này để track trạng thái submit
+  String _selectedRole = 'Employee';
+  bool _isSubmitted = false;
+
+  final List<String> _roles = ['Employee', 'Project Manager', 'Admin'];
 
   @override
   void initState() {
     super.initState();
 
-    // Lắng nghe focus changes để cuộn màn hình
-    _nameFocusNode.addListener(() {
-      if (_nameFocusNode.hasFocus) {
-        _scrollToShowField(150.h);
+    _usernameFocusNode.addListener(() {
+      if (_usernameFocusNode.hasFocus) {
+        _scrollToShowField(200.h);
       }
     });
 
     _emailFocusNode.addListener(() {
       if (_emailFocusNode.hasFocus) {
-        _scrollToShowField(200.h);
+        _scrollToShowField(280.h);
       }
     });
 
-    _usernameFocusNode.addListener(() {
-      if (_usernameFocusNode.hasFocus) {
-        _scrollToShowField(250.h);
+    _fullNameFocusNode.addListener(() {
+      if (_fullNameFocusNode.hasFocus) {
+        _scrollToShowField(360.h);
       }
     });
   }
 
   void _scrollToShowField(double offset) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           offset,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
@@ -60,39 +64,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
     _usernameController.dispose();
+    _emailController.dispose();
+    _fullNameController.dispose();
     _scrollController.dispose();
-    _nameFocusNode.dispose();
-    _emailFocusNode.dispose();
     _usernameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _fullNameFocusNode.dispose();
     super.dispose();
-  }
-
-  String? _validateName(String? value) {
-    if (!_isSubmitted) return null; // Chỉ validate khi đã submit
-
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập họ và tên';
-    }
-    if (value.trim().length < 2) {
-      return 'Họ tên phải có ít nhất 2 ký tự';
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (!_isSubmitted) return null;
-
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập email';
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Email không hợp lệ';
-    }
-    return null;
   }
 
   String? _validateUsername(String? value) {
@@ -105,312 +84,233 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return 'Tên đăng nhập phải có ít nhất 3 ký tự';
     }
     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
-      return 'Tên đăng nhập chỉ được chứa chữ, số và dấu gạch dưới';
+      return 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới';
     }
     return null;
   }
 
-  String? _validateRole() {
+  String? _validateEmail(String? value) {
     if (!_isSubmitted) return null;
 
-    if (_selectedRole == 'Chọn vai trò') {
-      return 'Vui lòng chọn vai trò';
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập email';
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+      return 'Email không hợp lệ';
     }
     return null;
   }
 
-  void _continue() {
-    FocusScope.of(context).unfocus();
+  String? _validateFullName(String? value) {
+    if (!_isSubmitted) return null;
 
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập họ và tên';
+    }
+    if (value.trim().length < 2) {
+      return 'Họ và tên phải có ít nhất 2 ký tự';
+    }
+    return null;
+  }
+
+  void _handleNext() {
     setState(() {
       _isSubmitted = true;
     });
 
-    if (_formKey.currentState!.validate() && _validateRole() == null) {
+    if (_formKey.currentState!.validate()) {
       final userData = User(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
         username: _usernameController.text.trim(),
+        email: _emailController.text.trim(),
+        fullName: _fullNameController.text.trim(),
         role: _selectedRole,
-        id: '',
-        avatarUrl: '',
-        joinedDate: DateTime.now(),
-        isActive: true,
       );
 
-      Navigator.pushNamed(context, '/register2', arguments: userData);
-    } else if (_validateRole() != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_validateRole()!), backgroundColor: Colors.red),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RegisterScreen2(),
+          settings: RouteSettings(arguments: userData),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Color(0xFFF5F5F5),
-        resizeToAvoidBottomInset: true,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFF5F5F5), Color(0xFF6C63FF).withOpacity(0.1)],
-            ),
-          ),
-          child: Column(
-            children: [
-              TopBarAuth(
-                title: 'Đăng ký',
-                onPressed: () => Navigator.pop(context),
+    return Scaffold(
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          children: [
+            TopBarAuth(title: 'Đăng ký', isBack: false, onPressed: () {}),
+            Container(
+              width: double.infinity,
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 200.h,
               ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30.r),
+                  topRight: Radius.circular(30.r),
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(24.w),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 30.h),
 
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                    ),
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.all(16.r),
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          bottom: keyboardHeight > 0 ? 20.h : 0,
-                        ),
-                        padding: EdgeInsets.only(
-                          left: 32.w,
-                          right: 32.w,
-                          top: 16.h,
-                          bottom: 16.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Project Hub',
-                              style: TextStyle(
-                                fontSize: 26.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2D2D2D),
-                              ),
-                            ),
-                            Text(
-                              'Quản lý dự án thông minh',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            SizedBox(height: 16.h),
+                      // Username Field
+                      _buildTextField(
+                        'Tên đăng nhập',
+                        'Nhập tên đăng nhập của bạn',
+                        _usernameController,
+                        _usernameFocusNode,
+                        _validateUsername,
+                        TextInputAction.next,
+                        onSubmitted: (_) => _emailFocusNode.requestFocus(),
+                      ),
 
-                            _buildTextField(
-                              'Họ và tên',
-                              'Nhập họ và tên',
-                              _nameController,
-                              _nameFocusNode,
-                              _validateName,
-                              TextInputAction.next,
-                              onSubmitted:
-                                  (_) => FocusScope.of(
-                                    context,
-                                  ).requestFocus(_emailFocusNode),
-                            ),
-                            SizedBox(height: 12.h),
+                      SizedBox(height: 20.h),
 
-                            _buildTextField(
-                              'Email',
-                              'Nhập email',
-                              _emailController,
-                              _emailFocusNode,
-                              _validateEmail,
-                              TextInputAction.next,
-                              keyboardType: TextInputType.emailAddress,
-                              onSubmitted:
-                                  (_) => FocusScope.of(
-                                    context,
-                                  ).requestFocus(_usernameFocusNode),
-                            ),
-                            SizedBox(height: 12.h),
+                      // Email Field
+                      _buildTextField(
+                        'Email',
+                        'Nhập email của bạn',
+                        _emailController,
+                        _emailFocusNode,
+                        _validateEmail,
+                        TextInputAction.next,
+                        keyboardType: TextInputType.emailAddress,
+                        onSubmitted: (_) => _fullNameFocusNode.requestFocus(),
+                      ),
 
-                            _buildTextField(
-                              'Tên đăng nhập',
-                              'Tên đăng nhập là duy nhất',
-                              _usernameController,
-                              _usernameFocusNode,
-                              _validateUsername,
-                              TextInputAction.done,
-                              onSubmitted:
-                                  (_) => FocusScope.of(context).unfocus(),
-                            ),
-                            SizedBox(height: 12.h),
+                      SizedBox(height: 20.h),
 
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Vai trò',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color:
-                                          _isSubmitted &&
-                                                  _validateRole() != null
-                                              ? Colors.red
-                                              : Color(0xFFE9ECEF),
-                                    ),
-                                  ),
-                                  child: DropdownButtonFormField<String>(
-                                    value: _selectedRole,
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                        vertical: 10.h,
-                                      ),
-                                    ),
-                                    items:
-                                        [
-                                          'Chọn vai trò',
-                                          'Project Manager',
-                                          'Developer',
-                                          'Designer',
-                                          'Tester',
-                                          'Business Analyst',
-                                        ].map((String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Text(
-                                              value,
-                                              style: TextStyle(
-                                                color:
-                                                    value == 'Chọn vai trò'
-                                                        ? Colors.grey[500]
-                                                        : Colors.black,
-                                                fontSize: 14.sp,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedRole = newValue!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                      // Full Name Field
+                      _buildTextField(
+                        'Họ và tên',
+                        'Nhập họ và tên đầy đủ',
+                        _fullNameController,
+                        _fullNameFocusNode,
+                        _validateFullName,
+                        TextInputAction.done,
+                        onSubmitted: (_) => _handleNext(),
+                      ),
 
-                            SizedBox(height: 25.h),
+                      SizedBox(height: 20.h),
 
-                            Container(
-                              width: double.infinity,
-                              height: 56.h,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFF6C63FF),
-                                    Color(0xFF8B5FBF),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _continue,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Tiếp tục',
-                                  style: TextStyle(
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: 20.h),
-                            Text(
-                              'hoặc',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Đã có tài khoản? ',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/login');
-                                  },
-                                  child: Text(
-                                    'Đăng nhập ngay',
-                                    style: TextStyle(
-                                      color: Color(0xFF6C63FF),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14.sp,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: keyboardHeight > 0 ? 100.h : 0),
-                          ],
+                      // Role Selection
+                      Text(
+                        'Vai trò',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF2D2D2D),
                         ),
                       ),
-                    ),
+                      SizedBox(height: 8.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: const Color(0xFFE9ECEF)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedRole,
+                            isExpanded: true,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: const Color(0xFF2D2D2D),
+                            ),
+                            items:
+                                _roles.map((String role) {
+                                  return DropdownMenuItem<String>(
+                                    value: role,
+                                    child: Text(role),
+                                  );
+                                }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedRole = newValue!;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 40.h),
+
+                      // Next Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56.h,
+                        child: ElevatedButton(
+                          onPressed: _handleNext,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6C63FF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          child: Text(
+                            'Tiếp tục',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      // Login Link
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Đã có tài khoản? ',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14.sp,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Đăng nhập ngay',
+                                  style: TextStyle(
+                                    color: const Color(0xFF6C63FF),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 50.h),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -421,7 +321,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String hint,
     TextEditingController controller,
     FocusNode focusNode,
-    String? Function(String?) validator,
+    String? Function(String?)? validator,
     TextInputAction textInputAction, {
     TextInputType keyboardType = TextInputType.text,
     Function(String)? onSubmitted,
@@ -434,34 +334,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF2D2D2D),
+            color: const Color(0xFF2D2D2D),
           ),
         ),
-        SizedBox(height: 5.h),
-        Container(
-          height: 52.h,
-          decoration: BoxDecoration(
-            color: Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFFE9ECEF)),
-          ),
-          child: TextFormField(
-            controller: controller,
-            focusNode: focusNode,
-            validator: validator,
-            textInputAction: textInputAction,
-            keyboardType: keyboardType,
-            onFieldSubmitted: onSubmitted,
-            style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 5.h,
-              ),
-              errorStyle: TextStyle(fontSize: 12.sp),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          validator: validator,
+          textInputAction: textInputAction,
+          keyboardType: keyboardType,
+          onFieldSubmitted: onSubmitted,
+          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF2D2D2D)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
             ),
           ),
         ),

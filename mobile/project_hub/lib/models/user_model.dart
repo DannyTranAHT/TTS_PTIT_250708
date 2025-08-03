@@ -1,71 +1,58 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'user_model.g.dart';
+
+//Annotation này đánh dấu class User là một model có thể chuyển đổi từ/đến JSON
+@JsonSerializable()
 class User {
-  final String id;
-  final String name;
-  final String email;
+  @JsonKey(name: '_id')
+  final String? id;
   final String username;
+  final String email;
+  @JsonKey(name: 'full_name')
+  final String fullName;
   final String role;
-  final String avatarUrl;
-  final DateTime joinedDate;
+  final String? major;
+  final String? avatar;
   final bool isActive;
-  User({
-    required this.id,
-    required this.name,
-    required this.email,
+  final DateTime? createdAt;
+
+  const User({
+    this.id,
     required this.username,
+    required this.email,
+    required this.fullName,
     required this.role,
-    this.avatarUrl = '',
-    required this.joinedDate,
+    this.major,
+    this.avatar,
     this.isActive = true,
+    this.createdAt,
   });
 
-  // Mock data cho demo
-  static List<User> mockUsers = [
-    User(
-      id: '1',
-      name: 'Nguyễn Văn A',
-      username: 'nguyenvana',
-      email: 'nguyenvana@gmail.com',
-      role: 'Project Manager',
-      joinedDate: DateTime.now().subtract(Duration(days: 30)),
-    ),
-    User(
-      id: '2',
-      username: 'tranthib',
-      name: 'Trần Thị B',
-      email: 'tranthib@gmail.com',
-      role: 'Developer',
-      joinedDate: DateTime.now().subtract(Duration(days: 20)),
-    ),
-  ];
-
-  // Mock data để search
-  static List<User> searchableUsers = [
-    User(
-      id: '4',
-      username: 'phamthid',
-      name: 'Phạm Thị D',
-      email: 'phamthid@gmail.com',
-      role: 'Developer',
-      joinedDate: DateTime.now(),
-      isActive: false,
-    ),
-    User(
-      id: '5',
-      username: 'hoangvane',
-      name: 'Hoàng Văn E',
-      email: 'hoangvane@gmail.com',
-      role: 'Tester',
-      joinedDate: DateTime.now(),
-      isActive: false,
-    ),
-    User(
-      id: '6',
-      username: 'vothif',
-      name: 'Võ Thị F',
-      email: 'vothif@gmail.com',
-      role: 'Business Analyst',
-      joinedDate: DateTime.now(),
-      isActive: false,
-    ),
-  ];
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  Map<String, dynamic> toJson() => _$UserToJson(this);
+  //Tạo ra một bản sao của User nhưng có thể thay đổi một vài thuộc tính
+  User copyWith({
+    String? id,
+    String? username,
+    String? email,
+    String? fullName,
+    String? role,
+    String? major,
+    String? avatar,
+    bool? isActive,
+    DateTime? createdAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
+      role: role ?? this.role,
+      major: major ?? this.major,
+      avatar: avatar ?? this.avatar,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

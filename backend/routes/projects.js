@@ -19,7 +19,7 @@ router.use(auth);
 router.get('/', getAllProjects);
 router.get('/:id', getProjectById);
 router.post('/', validate(projectSchemas.create), createProject);
-router.put('/:id', updateProject);
+router.put('/:id',validate(projectSchemas.update), updateProject);
 router.delete('/:id', authorize('Admin', 'Project Manager'), deleteProject);
 router.post('/:id/members', addMember);
 router.delete('/:id/members/:user_id', removeMember);

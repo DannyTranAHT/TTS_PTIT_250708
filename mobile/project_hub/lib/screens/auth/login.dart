@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/screens/home/home.dart';
 import 'package:project_hub/screens/auth/register.dart';
-import 'package:project_hub/screens/widgets/top_bar_auth.dart';
+import 'package:project_hub/screens/home/home.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../widgets/top_bar_auth.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -36,11 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _scrollToShowField(double offset) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           offset,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
@@ -77,43 +81,38 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void _handleLogin() {
-    // Ẩn keyboard trước khi validate
+  Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
 
-    if (_formKey.currentState!.validate()) {
-      // Nếu validation thành công, thực hiện đăng nhập
-      _performLogin();
-    }
-  }
+    if (!_formKey.currentState!.validate()) return;
 
-  void _performLogin() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
-          ),
-        );
-      },
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await authProvider.login(
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
     );
-    Future.delayed(Duration(seconds: 2), () {
-      Navigator.of(context).pop();
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đăng nhập thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
       );
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đăng nhập thành công!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Đăng nhập thất bại'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -136,282 +135,268 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               TopBarAuth(title: 'Đăng nhập', onPressed: () {}),
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                    ),
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.all(18.r),
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          bottom: keyboardHeight > 0 ? 20.h : 0,
+                child: Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                         ),
-                        padding: EdgeInsets.all(32.r),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: SingleChildScrollView(
+                          controller: _scrollController,
+                          padding: EdgeInsets.all(18.r),
+                          child: Container(
+                            margin: EdgeInsets.only(
+                              bottom: keyboardHeight > 0 ? 20.h : 0,
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Project Hub',
-                              style: TextStyle(
-                                fontSize: 28.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2D2D2D),
-                              ),
+                            padding: EdgeInsets.all(32.r),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              'Quản lý dự án thông minh',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            SizedBox(height: 36.h),
-
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
+                                  'Project Hub',
+                                  style: TextStyle(
+                                    fontSize: 28.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2D2D2D),
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  'Quản lý dự án thông minh',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                SizedBox(height: 36.h),
+
+                                _buildTextField(
                                   'Tên đăng nhập',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
+                                  'Nhập tên đăng nhập của bạn',
+                                  _usernameController,
+                                  _usernameFocusNode,
+                                  _validateUsername,
+                                  TextInputAction.next,
+                                  onSubmitted:
+                                      (_) => _passwordFocusNode.requestFocus(),
                                 ),
-                                SizedBox(height: 8.h),
-                                Container(
-                                  height: 56.h,
-                                  padding: EdgeInsets.only(top: 5.h),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Color(0xFFE9ECEF),
-                                    ),
-                                  ),
-                                  child: TextFormField(
-                                    controller: _usernameController,
-                                    focusNode: _usernameFocusNode,
-                                    validator: _validateUsername,
-                                    textInputAction: TextInputAction.next,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Color(0xFF2D2D2D),
-                                    ),
-                                    onFieldSubmitted: (_) {
-                                      FocusScope.of(
-                                        context,
-                                      ).requestFocus(_passwordFocusNode);
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: 'Nhập tên đăng nhập',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 14.sp,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                      ),
-                                      errorStyle: TextStyle(fontSize: 12.sp),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16.h),
+                                SizedBox(height: 16.h),
 
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
+                                _buildTextField(
                                   'Mật khẩu',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
+                                  'Nhập mật khẩu của bạn',
+                                  _passwordController,
+                                  _passwordFocusNode,
+                                  _validatePassword,
+                                  TextInputAction.done,
+                                  isPassword: true,
+                                  obscureText: _obscureText,
+                                  onToggleObscure: () {
+                                    setState(() {
+                                      _obscureText = !_obscureText;
+                                    });
+                                  },
+                                  onSubmitted: (_) => _handleLogin(),
                                 ),
-                                SizedBox(height: 8.h),
+                                SizedBox(height: 24.h),
+
                                 Container(
+                                  width: double.infinity,
                                   height: 56.h,
-                                  padding: EdgeInsets.only(top: 16.h),
                                   decoration: BoxDecoration(
-                                    color: Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Color(0xFFE9ECEF),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Color(0xFF6C63FF),
+                                        Color(0xFF8B5FBF),
+                                      ],
                                     ),
-                                  ),
-                                  child: TextFormField(
-                                    controller: _passwordController,
-                                    focusNode: _passwordFocusNode,
-                                    validator: _validatePassword,
-                                    obscureText: _obscureText,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Color(0xFF2D2D2D),
-                                    ),
-                                    textInputAction: TextInputAction.done,
-                                    onFieldSubmitted: (_) {
-                                      _handleLogin();
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: 'Nhập mật khẩu',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 14.sp,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                      ),
-                                      errorStyle: TextStyle(fontSize: 12.sp),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscureText
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                          color: Colors.grey[600],
-                                          size: 24.sp,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscureText = !_obscureText;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: 24.h),
-
-                            Container(
-                              width: double.infinity,
-                              height: 56.h,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFF6C63FF),
-                                    Color(0xFF8B5FBF),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                ),
-                                child: Text(
-                                  'Đăng nhập',
-                                  style: TextStyle(
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                  child: ElevatedButton(
+                                    onPressed: _handleLogin,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child:
+                                        authProvider.isLoading
+                                            ? SizedBox(
+                                              width: 24.w,
+                                              height: 24.w,
+                                              child:
+                                                  const CircularProgressIndicator(
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(Colors.white),
+                                                    strokeWidth: 2,
+                                                  ),
+                                            )
+                                            : Text(
+                                              'Đăng nhập',
+                                              style: TextStyle(
+                                                fontSize: 16.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            SizedBox(height: 20.h),
+                                SizedBox(height: 20.h),
 
-                            TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Tính năng đang phát triển'),
-                                    backgroundColor: Colors.orange,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Quên mật khẩu?',
-                                style: TextStyle(
-                                  color: Color(0xFF6C63FF),
-                                  fontSize: 14.sp,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              'hoặc',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Chưa có tài khoản? ',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => RegisterScreen(),
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Tính năng đang phát triển',
+                                        ),
+                                        backgroundColor: Colors.orange,
+                                        behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                   },
                                   child: Text(
-                                    'Đăng ký',
+                                    'Quên mật khẩu?',
                                     style: TextStyle(
                                       color: Color(0xFF6C63FF),
-                                      fontWeight: FontWeight.w600,
                                       fontSize: 14.sp,
                                     ),
                                   ),
                                 ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  'hoặc',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Chưa có tài khoản? ',
+                                      style: TextStyle(
+                                        color: Colors.grey[700],
+                                        fontSize: 14.sp,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => RegisterScreen(),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        'Đăng ký',
+                                        style: TextStyle(
+                                          color: Color(0xFF6C63FF),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(
+                                  height: keyboardHeight > 0 ? 100.h : 0,
+                                ),
                               ],
                             ),
-
-                            SizedBox(height: keyboardHeight > 0 ? 100.h : 0),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    String hint,
+    TextEditingController controller,
+    FocusNode focusNode,
+    String? Function(String?)? validator,
+    TextInputAction textInputAction, {
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? onToggleObscure,
+    Function(String)? onSubmitted,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF2D2D2D),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          validator: validator,
+          textInputAction: textInputAction,
+          obscureText: isPassword && obscureText,
+          onFieldSubmitted: onSubmitted,
+          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF2D2D2D)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
+            ),
+            suffixIcon:
+                isPassword
+                    ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey[600],
+                        size: 24.sp,
+                      ),
+                      onPressed: onToggleObscure,
+                    )
+                    : null,
+          ),
+        ),
+      ],
     );
   }
 }

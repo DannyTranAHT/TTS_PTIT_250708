@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/res/images/app_images.dart';
+import 'package:project_hub/models/user_model.dart';
+import 'package:project_hub/providers/project_provider.dart';
 import 'package:project_hub/screens/widgets/bottom_bar.dart';
 import 'package:project_hub/screens/widgets/project_card.dart';
 import 'package:project_hub/screens/widgets/stat_card.dart';
 import 'package:project_hub/screens/widgets/task_card.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/services/storage_service.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,6 +16,50 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? token;
+  String? refreshToken;
+  User? user;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      // Load data from storage
+      final loadedToken = await StorageService.getToken();
+      final loadedRefreshToken = await StorageService.getRefreshToken();
+      final loadedUser = await StorageService.getUser();
+
+      setState(() {
+        token = loadedToken;
+        refreshToken = loadedRefreshToken;
+        user = loadedUser;
+        isLoading = false;
+      });
+
+      print('HomeScreen initialized with token: $token');
+      print('User: ${user?.fullName}');
+
+      // Fetch projects after loading token
+      if (token != null && mounted) {
+        final projectProvider = Provider.of<ProjectProvider>(
+          context,
+          listen: false,
+        );
+        await projectProvider.fetchProjects(token!);
+      }
+    } catch (e) {
+      print('Error initializing HomeScreen: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,13 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color.fromARGB(255, 250, 250, 250),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(20.w),
+                      padding: EdgeInsets.all(16.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
                             width: double.maxFinite,
-                            height: 115.h,
+                            height: 120.h,
                             padding: EdgeInsets.all(16.w),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -94,56 +141,79 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(height: 16.h),
 
                           // Thống kê dự án
-                          Row(
-                            children: [
-                              Expanded(
-                                child: StatCard(
-                                  title: 'DỰ ÁN',
-                                  value: '3',
-                                  subtitle: '+2 tuần này',
-                                  color: Color(0xFF4CAF50),
-                                  icon: Icons.folder_outlined,
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: StatCard(
-                                  title: 'TASK TỔNG',
-                                  value: '19',
-                                  subtitle: '+7 hôm nay',
-                                  color: Color(0xFF2196F3),
-                                  icon: Icons.task_alt_outlined,
-                                ),
-                              ),
-                            ],
+                          Container(
+                            height: 230.h,
+                            child: Consumer<ProjectProvider>(
+                              builder: (context, projectProvider, child) {
+                                if (projectProvider.isLoading) {
+                                  return Container(
+                                    color: Colors.white,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: StatCard(
+                                            title: 'DỰ ÁN',
+                                            value:
+                                                '${projectProvider.numProjects}',
+                                            subtitle:
+                                                '+${projectProvider.numberInWeek} tuần này',
+                                            color: Color(0xFF4CAF50),
+                                            icon: Icons.folder_outlined,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: StatCard(
+                                            title: 'TASK TỔNG',
+                                            value: '19',
+                                            subtitle: '+7 hôm nay',
+                                            color: Color(0xFF2196F3),
+                                            icon: Icons.task_alt_outlined,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    SizedBox(height: 12.h),
+
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: StatCard(
+                                            title: 'HOÀN THÀNH',
+                                            value:
+                                                '${projectProvider.numCompletedProjects}',
+                                            subtitle:
+                                                '${(projectProvider.numCompletedProjects / projectProvider.numProjects * 100).round()}% tỷ lệ',
+                                            color: Color(0xFFFF9800),
+                                            icon: Icons.check_circle_outline,
+                                          ),
+                                        ),
+                                        SizedBox(width: 12.w),
+                                        Expanded(
+                                          child: StatCard(
+                                            title: 'QUÁ HẠN',
+                                            value:
+                                                '${projectProvider.numOverdueProjects}',
+                                            subtitle: '1 từ hôm qua',
+                                            color: Color(0xFFF44336),
+                                            icon: Icons.access_time,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
-
-                          SizedBox(height: 12.h),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: StatCard(
-                                  title: 'HOÀN THÀNH',
-                                  value: '14',
-                                  subtitle: '73% tỷ lệ',
-                                  color: Color(0xFFFF9800),
-                                  icon: Icons.check_circle_outline,
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: StatCard(
-                                  title: 'QUÁ HẠN',
-                                  value: '1',
-                                  subtitle: '1 từ hôm qua',
-                                  color: Color(0xFFF44336),
-                                  icon: Icons.access_time,
-                                ),
-                              ),
-                            ],
-                          ),
-
                           SizedBox(height: 18.h),
 
                           // Dự án gần đây
@@ -234,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                          SizedBox(height: 12.h),
+                          SizedBox(height: 27.h),
                           // Task của tôi
                           Container(
                             padding: EdgeInsets.only(

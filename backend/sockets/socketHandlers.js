@@ -4,6 +4,7 @@ const Project = require('../models/Project');
 const { createNotification } = require('../services/notificationService');
 
 const setupSocketHandlers = (io) => {
+  // Socket authentication middleware
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
@@ -119,9 +120,16 @@ const setupSocketHandlers = (io) => {
       });
     });
 
-    // Handle private messages (if needed)
+    // Handle private messages (FIXED VERSION)
     socket.on('message:private', async (data) => {
       const { recipient_id, message } = data;
+      
+      // ✅ Validate recipient_id is a valid ObjectId
+      const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(recipient_id)) {
+        socket.emit('error', { message: 'Invalid recipient ID' });
+        return;
+      }
       
       // Send message to recipient
       io.to(`user_${recipient_id}`).emit('message:received', {
@@ -134,17 +142,22 @@ const setupSocketHandlers = (io) => {
         timestamp: new Date()
       });
 
-      // Create notification for recipient
-      await createNotification({
-        user_id: recipient_id,
-        type: 'message_received',
-        title: 'New Message',
-        message: `${socket.user.full_name} sent you a message`,
-        related_entity: {
-          entity_type: 'User',
-          entity_id: socket.user._id
-        }
-      });
+      // ✅ Create notification với enum values có sẵn trong schema
+      try {
+        await createNotification({
+          user_id: recipient_id, // ✅ Sử dụng ObjectId thực
+          type: 'comment_added', // ✅ Sử dụng enum có sẵn thay vì 'message_received'
+          title: 'New Message',
+          message: `${socket.user.full_name} sent you a message`,
+          related_entity: {
+            entity_type: 'Comment', // ✅ Sử dụng enum có sẵn thay vì 'User'
+            entity_id: socket.user._id
+          }
+        });
+      } catch (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Don't break the message flow even if notification fails
+      }
     });
 
     // Handle disconnect

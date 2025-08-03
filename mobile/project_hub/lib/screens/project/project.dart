@@ -359,10 +359,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   ) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProjectDetailScreen()),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ProjectDetailScreen()),
+        // );
       },
       child: Container(
         padding: EdgeInsets.all(16.w),

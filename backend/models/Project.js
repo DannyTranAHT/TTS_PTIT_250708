@@ -43,13 +43,18 @@ const projectSchema = new mongoose.Schema({
     default: 0
   },
   budget: {
-    type: mongoose.Schema.Types.Decimal128,
+    type: Number,
     default: 0
   },
   is_archived: {
     type: Boolean,
     default: false
-  }
+  },
+  num_tasks: {
+    type: Number,
+    default: 0
+  },
+
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
