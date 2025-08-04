@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           listen: false,
         );
         await projectProvider.fetchProjects(token!);
+        await projectProvider.fetchRecentProjects(token!);
       }
     } catch (e) {
       print('Error initializing HomeScreen: $e');
@@ -153,6 +154,74 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   );
                                 }
+
+                                if (projectProvider.state ==
+                                    ProjectState.error) {
+                                  return Container(
+                                    color: Colors.white,
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 48,
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Lỗi tải dữ liệu',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            projectProvider.errorMessage ??
+                                                'Unknown error',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              if (token != null) {
+                                                await projectProvider
+                                                    .fetchProjects(token!);
+                                              }
+                                            },
+                                            child: Text('Thử lại'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                // Safe calculation with null checks
+                                final totalProjects =
+                                    projectProvider.numProjects;
+                                final completedProjects =
+                                    projectProvider.numCompletedProjects;
+                                final overdueProjects =
+                                    projectProvider.numOverdueProjects;
+                                final weekProjects =
+                                    projectProvider.numberInWeek;
+
+                                // Calculate completion percentage safely
+                                final completionPercentage =
+                                    totalProjects > 0
+                                        ? (completedProjects /
+                                                totalProjects *
+                                                100)
+                                            .round()
+                                        : 0;
+
                                 return Column(
                                   children: [
                                     Row(
@@ -160,10 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Expanded(
                                           child: StatCard(
                                             title: 'DỰ ÁN',
-                                            value:
-                                                '${projectProvider.numProjects}',
-                                            subtitle:
-                                                '+${projectProvider.numberInWeek} tuần này',
+                                            value: '$totalProjects',
+                                            subtitle: '+$weekProjects tuần này',
                                             color: Color(0xFF4CAF50),
                                             icon: Icons.folder_outlined,
                                           ),
@@ -172,7 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Expanded(
                                           child: StatCard(
                                             title: 'TASK TỔNG',
-                                            value: '19',
+                                            value:
+                                                '19', // This should come from actual task count
                                             subtitle: '+7 hôm nay',
                                             color: Color(0xFF2196F3),
                                             icon: Icons.task_alt_outlined,
@@ -180,18 +248,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ],
                                     ),
-
                                     SizedBox(height: 12.h),
-
                                     Row(
                                       children: [
                                         Expanded(
                                           child: StatCard(
                                             title: 'HOÀN THÀNH',
-                                            value:
-                                                '${projectProvider.numCompletedProjects}',
+                                            value: '$completedProjects',
                                             subtitle:
-                                                '${(projectProvider.numCompletedProjects / projectProvider.numProjects * 100).round()}% tỷ lệ',
+                                                '$completionPercentage% tỷ lệ',
                                             color: Color(0xFFFF9800),
                                             icon: Icons.check_circle_outline,
                                           ),
@@ -200,8 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Expanded(
                                           child: StatCard(
                                             title: 'QUÁ HẠN',
-                                            value:
-                                                '${projectProvider.numOverdueProjects}',
+                                            value: '$overdueProjects',
                                             subtitle: '1 từ hôm qua',
                                             color: Color(0xFFF44336),
                                             icon: Icons.access_time,
@@ -241,66 +305,157 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Dự án gần đây',
-                                      style: TextStyle(
-                                        fontSize: 18.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF2D2D2D),
+                            child: Consumer<ProjectProvider>(
+                              builder: (context, projectProvider, child) {
+                                if (projectProvider.isLoading) {
+                                  return Container(
+                                    color: Colors.white,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+
+                                if (projectProvider.state ==
+                                    ProjectState.error) {
+                                  return Container(
+                                    color: Colors.white,
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 48,
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Lỗi tải dữ liệu',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            projectProvider.errorMessage ??
+                                                'Unknown error',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              if (token != null) {
+                                                await projectProvider
+                                                    .fetchProjects(token!);
+                                              }
+                                            },
+                                            child: Text('Thử lại'),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    TextButton(
-                                      onPressed: () {},
-                                      child: Text(
-                                        'Xem tất cả',
-                                        style: TextStyle(
-                                          color: Color(0xFF6C63FF),
-                                          fontSize: 14.sp,
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Dự án gần đây',
+                                          style: TextStyle(
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF2D2D2D),
+                                          ),
                                         ),
-                                      ),
+                                        TextButton(
+                                          onPressed: () {},
+                                          child: Text(
+                                            'Xem tất cả',
+                                            style: TextStyle(
+                                              color: Color(0xFF6C63FF),
+                                              fontSize: 14.sp,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      height: 260.h,
+                                      child:
+                                          projectProvider.recentProjects.isEmpty
+                                              ? Center(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.folder_open,
+                                                      size: 48,
+                                                      color: Colors.grey[400],
+                                                    ),
+                                                    SizedBox(height: 8),
+                                                    Text(
+                                                      'Chưa có dự án gần đây',
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                        fontSize: 16.sp,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                              : ListView.builder(
+                                                itemCount:
+                                                    projectProvider
+                                                        .recentProjects
+                                                        .length,
+                                                padding: EdgeInsets.zero,
+                                                itemBuilder: (context, index) {
+                                                  if (index >=
+                                                      projectProvider
+                                                          .recentProjects
+                                                          .length) {
+                                                    return SizedBox.shrink();
+                                                  }
+
+                                                  final project =
+                                                      projectProvider
+                                                          .recentProjects[index];
+                                                  return Padding(
+                                                    padding: EdgeInsets.only(
+                                                      bottom: 8.h,
+                                                    ),
+                                                    child: ProjectCard(
+                                                      title: project.name,
+                                                      members:
+                                                          project
+                                                              .members
+                                                              ?.length
+                                                              .toString() ??
+                                                          '0',
+                                                      tasks:
+                                                          project.numTasks
+                                                              .toString(),
+                                                      status: project.status,
+                                                      onTap: () {},
+                                                    ),
+                                                  );
+                                                },
+                                              ),
                                     ),
                                   ],
-                                ),
-                                Container(
-                                  height: 260.h,
-                                  child: ListView(
-                                    children: [
-                                      ProjectCard(
-                                        title: 'Mobile App Development',
-                                        members: '5',
-                                        tasks: '10',
-                                        status: 'ĐANG THỰC HIỆN',
-                                        statusColor: Color(0xFF4CAF50),
-                                        progress: 0.7,
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      ProjectCard(
-                                        title: 'API Integration',
-                                        members: '3',
-                                        tasks: '5',
-                                        status: 'QUÁ HẠN',
-                                        statusColor: Color(0xFFF44336),
-                                        progress: 0.4,
-                                      ),
-                                      SizedBox(height: 10.h),
-                                      ProjectCard(
-                                        title: 'Website Redesign',
-                                        members: '4',
-                                        tasks: '8',
-                                        status: 'HOÀN THÀNH',
-                                        statusColor: Color(0xFF2196F3),
-                                        progress: 1.0,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
 

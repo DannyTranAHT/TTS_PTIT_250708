@@ -34,14 +34,10 @@ const projectSchema = new mongoose.Schema({
   },
   members: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    default: []
   }],
-  progress: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0
-  },
+ 
   budget: {
     type: Number,
     default: 0
@@ -51,6 +47,10 @@ const projectSchema = new mongoose.Schema({
     default: false
   },
   num_tasks: {
+    type: Number,
+    default: 0
+  },
+  num_completed_tasks: {
     type: Number,
     default: 0
   },
