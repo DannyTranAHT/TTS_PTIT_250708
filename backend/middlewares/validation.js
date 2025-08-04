@@ -25,7 +25,8 @@ const authSchemas = {
   }),
   
   login: Joi.object({
-    email: Joi.string().email().required(),
+    username: Joi.string().min(3).max(30).required(),
+    email: Joi.string().email(),
     password: Joi.string().required()
   })
 };
@@ -84,6 +85,9 @@ const commentSchemas = {
     entity_type: Joi.string().valid('Project', 'Task').required(),
     entity_id: Joi.string().length(24).required(),
     content: Joi.string().required(),
+    parent_id: Joi.string().length(24).optional(),
+    attachments: Joi.string().optional().allow(null),
+
     parent_id: Joi.string().length(24).optional().allow(null),
   }),
 

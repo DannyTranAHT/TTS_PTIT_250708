@@ -57,8 +57,23 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
+    const { email, username, password } = req.body;
+    if(username && password) {
+      // Login by username
+      const user = await User.findOne({ username }).select('+password');
+      if (!user || !await user.comparePassword(password)) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
+     
+      const token = generateToken(user._id);
+      const refreshToken = generateRefreshToken(user._id);
+      return res.json({
+        message: 'Login successful',
+        token,
+        refreshToken,
+        user: user.toJSON()
+      });
+    }
     // Find user
     const user = await User.findOne({ email }).select('+password');
     

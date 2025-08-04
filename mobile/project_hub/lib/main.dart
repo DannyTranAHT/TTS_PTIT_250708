@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_hub/screens/login.dart';
-import 'package:project_hub/screens/register.dart';
-import 'package:project_hub/screens/register2.dart';
-import 'package:project_hub/screens/start.dart';
+import 'package:project_hub/screens/start/start.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/auth_provider.dart';
+import 'providers/project_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,25 +16,59 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(393, 802), // Kích thước từ Figma
+      designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
-          title: 'Project Hub',
-          theme: ThemeData(
-            primarySwatch: Colors.purple,
-            fontFamily: 'Roboto',
-            textTheme: Typography.englishLike2021.apply(fontSizeFactor: 1.sp),
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => AuthProvider()),
+            ChangeNotifierProvider(create: (_) => ProjectProvider()),
+          ],
+          child: MaterialApp(
+            title: 'ProjectHub',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+              primaryColor: const Color(0xFF6C63FF),
+              scaffoldBackgroundColor: Colors.white,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF6C63FF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: const Color(0xFFF8F9FA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF6C63FF)),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red),
+                ),
+              ),
+            ),
+            home: SplashScreen(),
           ),
-          debugShowCheckedModeBanner: false,
-          home: SplashScreen(),
-          routes: {
-            '/login': (context) => LoginScreen(),
-            '/register1': (context) => RegisterScreen(),
-            '/register2': (context) => RegisterScreen2(),
-            '/splash': (context) => SplashScreen(),
-          },
         );
       },
     );

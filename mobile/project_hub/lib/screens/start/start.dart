@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/res/images/app_images.dart';
+import 'package:project_hub/screens/auth/login.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -48,7 +49,10 @@ class _SplashScreenState extends State<SplashScreen>
     // Chuyển hướng sau 5 giây
     Future.delayed(Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
       }
     });
   }
@@ -97,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
                   scale: _scaleAnimation,
                   child: Container(
                     width: 320.w,
-                    height: 300.h,
+                    height: 320.h,
                     child: Image.asset(AppImages.starticon, fit: BoxFit.cover),
                   ),
                 ),

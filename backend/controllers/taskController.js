@@ -30,6 +30,9 @@ const createTask = async (req, res) => {
       hours,
       attachments
     });
+    // Cập nhật số lượng task trong project
+    project.num_tasks += 1;
+    await project.save();
     const populatedTask = await Task.findById(task._id)
       .populate('project_id', 'name status')
       .populate('assigned_to_id', 'username full_name email avatar');
