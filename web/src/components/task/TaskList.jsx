@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import '../../styles/task/MyTasks.css';
-import { getAllProjects } from '../../services/projectService';
+import { getAllProjects,getProjectById } from '../../services/projectService';
 import { getAllTasks } from '../../services/taskService';
+import { getAllUsers } from '../../services/userService';
+import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const MyTasks = () => {
-  const [projects, setProjects] = useState([]);
+  const { id } = useParams();
+  const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [availableMembers, setAvailableMembers] = useState([]);   
   const [filters, setFilters] = useState({
     status: '',
     priority: '',
@@ -37,7 +42,7 @@ const MyTasks = () => {
       case 'newest':
         return new Date(b.due_date) - new Date(a.due_date);
       case 'oldest':
-        return new Date(a.due_date) - new Date(b.due_date);
+        return new Date(a.due_date) - new Date(b.due_date); 
       case 'name':
         return a.name.localeCompare(b.name);
       case 'priority':
@@ -69,39 +74,46 @@ const MyTasks = () => {
   };
 
   useEffect(() => {
-    // Lấy thông tin tất cả dự án
-    const fetchProjects = async () => {
-      try {
-        const res = await getAllProjects();
-        setProjects(res.projects);
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách dự án:', error);
-      }
-    };
-
-    fetchProjects();
-  }, []); // Chỉ chạy một lần khi component được mount
-
-  useEffect(() => {
-    // Lấy danh sách tất cả task của từng dự án
-    const fetchTasks = async () => {
-      try {
-        const allTasks = [];
-        for (const project of projects) {
-          const res = await getAllTasks(project._id);
-          allTasks.push(...res.tasks);
+      // Lấy thông tin dự án
+      const fetchProject = async () => {
+        try {
+          const res = await getProjectById(id);
+          setProject(res.project);
+        } catch (error) {
+          console.error('Lỗi khi lấy thông tin dự án:', error);
         }
-        setTasks(allTasks); // Cập nhật state tasks sau khi lấy xong tất cả task
-        console.log('All Tasks:', allTasks);
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách task:', error);
-      }
-    };
-
-    if (projects.length > 0) {
-      fetchTasks(); // Chỉ gọi khi danh sách projects đã được cập nhật
-    }
-  }, [projects]); // Theo dõi sự thay đổi của projects
+      };
+  
+      // Lấy danh sách task liên quan đến dự án
+      const fetchTasks = async () => {
+        try {
+          const res = await getAllTasks(id);
+          setTasks(res.tasks);
+          console.log('Tasks:', res.tasks);
+          setPagination({
+            currentPage: res.currentPage,
+            totalPages: res.totalPages,
+            total: res.total,
+          });
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách task:', error);
+        }
+      };
+  
+      // Lấy danh sách người dùng
+      const fetchUsers = async () => {
+        try {
+          const res = await getAllUsers();
+          setAvailableMembers(res.users); // Lưu danh sách người dùng
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách người dùng:', error);
+        }
+      };
+  
+      fetchProject();
+      fetchTasks();
+      fetchUsers();
+    }, [id]);
 
 const getStatusClass = (status) => ({
   'To Do': 'status-todo',

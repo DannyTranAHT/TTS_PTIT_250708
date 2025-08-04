@@ -4,11 +4,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { refreshToken } from '../../services/authService';
 import { jwtDecode } from 'jwt-decode';
 import { getAllProjects } from '../../services/projectService';
+import { getAllTasks } from '../../services/taskService';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const [totalProjects, setTotalProjects] = useState(0);
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [taskdone, setTaskDone] = useState(0);
+  const [taskblock, setTaskBlock] = useState(0);
   // 🚀 Load user info từ localStorage khi mount
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,6 +51,46 @@ export default function Dashboard() {
 
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+      // Lấy thông tin tất cả dự án
+      const fetchProjects = async () => {
+        try {
+          const res = await getAllProjects();
+          setProjects(res.projects);
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách dự án:', error);
+        }
+      };
+  
+      fetchProjects();
+    }, []); // Chỉ chạy một lần khi component được mount
+  
+    useEffect(() => {
+      // Lấy danh sách tất cả task của từng dự án
+      const fetchTasks = async () => {
+        try {
+          const allTasks = [];
+          for (const project of projects) {
+            const res = await getAllTasks(project._id);
+            allTasks.push(...res.tasks);
+          }
+          setTasks(allTasks); // Cập nhật state tasks sau khi lấy xong tất cả task
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách task:', error);
+        }
+      };
+  
+      if (projects.length > 0) {
+        fetchTasks(); // Chỉ gọi khi danh sách projects đã được cập nhật
+      }
+    }, [projects]);
+  useEffect(() => {
+    const completedTasks = tasks.filter(task => task.status === 'Done').length;
+    const blockedTasks = tasks.filter(task => task.status === 'Blocked').length;
+    setTaskBlock(blockedTasks);
+    setTaskDone(completedTasks);
+  }, [tasks]);
 
   // 🧠 Kiểm tra token mỗi 10s và gọi refresh nếu cần
   useEffect(() => {
@@ -97,24 +142,6 @@ export default function Dashboard() {
 
   return (
     <div>
-      {/* <header className="header">
-        <div className="header-content">
-          <div className="logo">🛠️ Project Hub</div>
-          <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
-            {user ? (
-              <>
-                <span>Chào mừng, <strong>{user.full_name}</strong></span>
-                <div className="user-avatar">
-                  {user.full_name?.charAt(0) || 'U'}
-                </div>
-              </>
-            ) : (
-              <span>Đang tải...</span>
-            )}
-          </div>
-        </div>
-      </header> */}
-
       <main className="main-content">
         <div className="welcome-section">
           <div className="welcome-content">
@@ -125,9 +152,9 @@ export default function Dashboard() {
 
         <div className="stats-grid">
           <StatCard title="Dự án" icon="📁" value={totalProjects} change={`+${totalProjects} tuần này`} className="projects" />
-          <StatCard title="Task tổng" icon="📋" value={45} change="+7 hôm nay" className="tasks" />
-          <StatCard title="Hoàn thành" icon="✅" value={33} change="73% tỷ lệ" className="completed" />
-          <StatCard title="Quá hạn" icon="⏰" value={3} change="-1 từ hôm qua" className="overdue" />
+          <StatCard title="Task tổng" icon="📋" value={tasks.length} change="+7 hôm nay" className="tasks" />
+          <StatCard title="Hoàn thành" icon="✅" value={taskdone} change="73% tỷ lệ" className="completed" />
+          <StatCard title="Quá hạn" icon="⏰" value={taskblock} change="-1 từ hôm qua" className="overdue" />
         </div>
 
         <div className="recent-section">

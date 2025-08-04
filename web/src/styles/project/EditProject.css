@@ -1,0 +1,133 @@
+.edit-project {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.edit-project h1 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.members-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.member-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.member-chip .remove-member {
+  cursor: pointer;
+  color: #e74c3c;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #666;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.main-content-create-project .selected-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.main-content-create-project .selected-member {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 6px 12px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.main-content-create-project .remove-member {
+  cursor: pointer;
+  color: #666;
+  font-weight: bold;
+}
+
+.main-content-create-project .remove-member:hover {
+  color: #ff4444;
+}

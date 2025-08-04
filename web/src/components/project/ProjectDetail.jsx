@@ -34,6 +34,7 @@ const ProjectDetail = () => {
       try {
         const res = await getAllTasks(id, page);
         setTasks(res.tasks);
+        console.log('Tasks:', res.tasks);
         setPagination({
           currentPage: res.currentPage,
           totalPages: res.totalPages,
