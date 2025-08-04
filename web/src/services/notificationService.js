@@ -10,9 +10,9 @@ export const getNotifications = () =>
       },
     })
     .then((res) => res.data);
-export const markAsRead = (id) =>
+export const markAsRead = (id, is_read) =>
   axios
-    .put(`${API_BASE}/${id}/read`, {}, {
+    .put(`${API_BASE}/${id}/read`, is_read , {
       headers: {
         Authorization: localStorage.getItem('token'),
       },

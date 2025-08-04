@@ -151,13 +151,21 @@ const ProjectList = () => {
           </div>
         </div>
         <div className="team-avatars">
-          {project.members.slice(0, 3).map((m, i) => <div className="team-avatar" key={i}>{m}</div>)}
+          {project.members.slice(0, 3).map((m, i) => {
+            const initials = m.split(' ').map((word, index, arr) => {
+              if (index === 0 || index === arr.length - 1) {
+                return word.charAt(0).toUpperCase();
+              }
+              return '';
+            }).join('');
+            return <div className="team-avatar" key={i}>{initials}</div>;
+          })}
           {project.members.length > 3 && <div className="team-avatar more-members">+{project.members.length - 3}</div>}
         </div>
         <div className="project-date">Hạn: {formatDate(project.dueDate)}</div>
         <div className="project-actions">
-          <button className="action-btn" onClick={(e) => { e.stopPropagation(); alert(`Chỉnh sửa dự án #${project.id}`); }}>✏️ Chỉnh sửa</button>
-          <button className="action-btn" onClick={(e) => { e.stopPropagation(); alert(`Xem tasks của dự án #${project.id}`); }}>📋 Xem tasks</button>
+          <button className="action-btn" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}/edit`); }}>✏️ Chỉnh sửa</button>
+          <button className="action-btn" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}/tasks`); }}>📋 Xem tasks</button>
         </div>
       </div>
     ));

@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Project = require('../models/Project');
 const { createNotification } = require('../services/notificationService');
+const cron = require('node-cron');
+const Task = require('../models/Task');
 
 const setupSocketHandlers = (io) => {
   // Socket authentication middleware
@@ -218,5 +220,39 @@ const setupSocketHandlers = (io) => {
     emitToProject
   };
 };
+
+// Cron job chạy mỗi giờ
+cron.schedule('0 * * * *', async () => {
+  try {
+    const now = new Date();
+    const sixHoursLater = new Date(now);
+    sixHoursLater.setHours(now.getHours() + 6);
+
+    // Lấy các task có due_date trong khoảng 6 giờ tới
+    const tasks = await Task.find({
+      due_date: { $gte: now, $lt: sixHoursLater },
+      status: { $ne: 'Completed' } // Chỉ nhắc nhở các task chưa hoàn thành
+    });
+
+    tasks.forEach(task => {
+      if (task.assigned_to_id) {
+        // Gửi thông báo qua WebSocket
+        io.to(`user_${task.assigned_to_id}`).emit('notification', {
+          type: 'due_date_reminder',
+          title: 'Nhắc nhở hạn chót công việc',
+          message: `Công việc "${task.name}" sẽ hết hạn trong 6 giờ.`,
+          related_entity: {
+            entity_type: 'Task',
+            entity_id: task._id
+          }
+        });
+
+        console.log(`Đã gửi nhắc nhở hạn chót cho công việc "${task.name}" đến người dùng ${task.assigned_to_id}`);
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi chạy cron job nhắc nhở hạn chót:', error);
+  }
+});
 
 module.exports = setupSocketHandlers;
