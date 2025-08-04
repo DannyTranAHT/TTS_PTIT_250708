@@ -80,7 +80,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         await projectProvider.fetchProject(widget.project.id ?? '', token!);
       }
     } catch (e) {
-      print('Error initializing HomeScreen: $e');
+      print('Error initializing: $e');
     }
   }
 
@@ -206,7 +206,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                     index,
                                   ) {
                                     return InkWell(
-                                      onTap: () {},
+                                      onTap: () {
+                                        if (index == 0) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => AddMemberScreen(
+                                                    projectId:
+                                                        project!.id ?? '',
+                                                  ),
+                                            ),
+                                          );
+                                        }
+                                      },
                                       child: Container(
                                         width: 108.w,
                                         height: 100.h,
@@ -297,7 +310,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                           '0',
                                       'THÀNH VIÊN',
                                       'Xem',
-                                      () {},
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => MemberListScreen(
+                                                  project: project!,
+                                                ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                   SizedBox(width: 12.w),
@@ -331,7 +354,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '${(project.numCompletedTasks / project.numTasks * 100).round()} %',
+                                    project.numTasks == 0
+                                        ? '0 %'
+                                        : '${(project.numCompletedTasks / project.numTasks * 100).round()} %',
                                     style: TextStyle(
                                       fontSize: 16.sp,
                                       fontWeight: FontWeight.bold,
@@ -351,8 +376,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                 child: FractionallySizedBox(
                                   alignment: Alignment.centerLeft,
                                   widthFactor:
-                                      (project.numCompletedTasks /
-                                          project.numTasks),
+                                      project.numTasks == 0
+                                          ? 0 / 1
+                                          : (project.numCompletedTasks /
+                                              project.numTasks),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: Color(0xFF4CAF50),
