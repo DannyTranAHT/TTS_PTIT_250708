@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/models/project_model.dart';
+import 'package:project_hub/providers/project_provider.dart';
 import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/project/create_project.dart';
 import 'package:project_hub/screens/project/project_detail.dart';
 import 'package:project_hub/screens/widgets/bottom_bar.dart';
+import 'package:project_hub/screens/widgets/project_card_all.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/services/storage_service.dart';
+import 'package:provider/provider.dart';
 
 class ProjectsScreen extends StatefulWidget {
   @override
@@ -12,6 +17,8 @@ class ProjectsScreen extends StatefulWidget {
 }
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
+  String? token;
+  String? refreshToken;
   String _selectedFilter = 'Tất cả';
   final List<String> _filterOptions = [
     'Tất cả',
@@ -20,6 +27,33 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     'Dự án đã hoàn thành',
     'Dự án đã hủy',
   ];
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      final loadedToken = await StorageService.getToken();
+      final loadedRefreshToken = await StorageService.getRefreshToken();
+
+      setState(() {
+        token = loadedToken;
+        refreshToken = loadedRefreshToken;
+      });
+
+      if (token != null && mounted) {
+        final projectProvider = Provider.of<ProjectProvider>(
+          context,
+          listen: false,
+        );
+        await projectProvider.fetchProjects(token!);
+      }
+    } catch (e) {
+      print('Error initializing HomeScreen: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,62 +211,64 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                             ),
                           ),
                           SizedBox(height: 20.h),
-                          Container(
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.height - 330.h,
-                            child: ListView(
-                              children: [
-                                _buildProjectCard(
-                                  'E-commerce Mobile App',
-                                  'Phát triển ứng dụng di động cho hệ thống quản lý bán hàng với tích hợp thanh toán online',
-                                  15,
-                                  24,
-                                  3,
-                                  'Hạn: 15/3/2024',
-                                  'ĐANG THỰC HIỆN',
-                                  Color(0xFF6C63FF),
-                                  0.62,
+                          Consumer<ProjectProvider>(
+                            builder: (context, projectProvider, child) {
+                              if (projectProvider.isLoading) {
+                                return Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+
+                              if (projectProvider.projects.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    'Không có dự án nào',
+                                    style: TextStyle(
+                                      fontSize: 16.sp,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                );
+                              }
+                              if (projectProvider.errorMessage != null) {
+                                return Center(
+                                  child: Text(
+                                    projectProvider.errorMessage!,
+                                    style: TextStyle(
+                                      fontSize: 16.sp,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return Container(
+                                width: double.infinity,
+                                height:
+                                    MediaQuery.of(context).size.height - 330.h,
+                                child: ListView.builder(
+                                  itemBuilder: (context, index) {
+                                    final projectProvider =
+                                        Provider.of<ProjectProvider>(context);
+                                    if (projectProvider.projects.isEmpty) {
+                                      return Center(
+                                        child: Text(
+                                          'Không có dự án nào',
+                                          style: TextStyle(
+                                            fontSize: 16.sp,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    final project =
+                                        projectProvider.projects[index];
+                                    return ProjectCardAll(project: project);
+                                  },
+                                  itemCount: projectProvider.projects.length,
                                 ),
-                                SizedBox(height: 16.h),
-                                _buildProjectCard(
-                                  'Mobile App Development',
-                                  'Phát triển ứng dụng di động cho hệ thống quản lý bán hàng với tích hợp thanh toán online',
-                                  15,
-                                  24,
-                                  3,
-                                  'Hạn: 15/3/2024',
-                                  'ĐANG THỰC HIỆN',
-                                  Colors.green,
-                                  0.62,
-                                ),
-                                SizedBox(height: 16.h),
-                                _buildProjectCard(
-                                  'Mobile App Development',
-                                  'Phát triển ứng dụng di động cho hệ thống quản lý bán hàng với tích hợp thanh toán online',
-                                  15,
-                                  24,
-                                  3,
-                                  'Hạn: 15/3/2024',
-                                  'ĐANG THỰC HIỆN',
-                                  Color(0xFF6C63FF),
-                                  0.62,
-                                ),
-                                SizedBox(height: 16.h),
-                                _buildProjectCard(
-                                  'Mobile App Development',
-                                  'Phát triển ứng dụng di động cho hệ thống quản lý bán hàng với tích hợp thanh toán online',
-                                  15,
-                                  24,
-                                  3,
-                                  'Hạn: 15/3/2024',
-                                  'ĐANG THỰC HIỆN',
-                                  Color(0xFF6C63FF),
-                                  0.62,
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                          SizedBox(height: 20.h),
                         ],
                       ),
                     ),
@@ -343,206 +379,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildProjectCard(
-    String title,
-    String description,
-    int completedTasks,
-    int totalTasks,
-    int members,
-    String deadline,
-    String status,
-    Color statusColor,
-    double progress,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => ProjectDetailScreen()),
-        // );
-      },
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border(top: BorderSide(color: Color(0xFF6C63FF), width: 3.w)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 48.w,
-                  height: 48.w,
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    Icons.smartphone,
-                    color: statusColor,
-                    size: 24.sp,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          status,
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 16.h),
-            Container(
-              width: double.infinity,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progress,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.task_alt, color: Colors.grey[500], size: 16.sp),
-                    SizedBox(width: 4.w),
-                    Text(
-                      '$completedTasks/$totalTasks tasks',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(width: 16.w),
-                Row(
-                  children: [
-                    Icon(Icons.people, color: Colors.grey[500], size: 16.sp),
-                    SizedBox(width: 4.w),
-                    Text(
-                      '$members thành viên',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    _buildAvatarItem('NA', Color(0xFF6C63FF)),
-                    Transform.translate(
-                      offset: Offset(-8.w, 0),
-                      child: _buildAvatarItem('JD', Color(0xFF4CAF50)),
-                    ),
-                    Transform.translate(
-                      offset: Offset(-16.w, 0),
-                      child: _buildAvatarItem('JS', Color(0xFFFF9800)),
-                    ),
-                  ],
-                ),
-                Text(
-                  deadline,
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatarItem(String initials, Color color) {
-    return Container(
-      width: 24.w,
-      height: 24.w,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2.w),
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 10.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 }

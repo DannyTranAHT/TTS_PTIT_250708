@@ -3,6 +3,7 @@ const { auth, authorize } = require('../middlewares/auth');
 const { validate, projectSchemas } = require('../middlewares/validation');
 const {
   getAllProjects,
+  getRecentProjects,
   getProjectById,
   createProject,
   updateProject,
@@ -17,6 +18,7 @@ const router = express.Router();
 router.use(auth);
 
 router.get('/', getAllProjects);
+router.get('/recent', getRecentProjects);
 router.get('/:id', getProjectById);
 router.post('/', validate(projectSchemas.create), createProject);
 router.put('/:id',validate(projectSchemas.update), updateProject);

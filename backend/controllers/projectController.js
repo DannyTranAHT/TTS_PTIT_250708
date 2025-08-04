@@ -49,6 +49,29 @@ const getAllProjects = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getRecentProjects = async (req, res) => {
+  try {
+    const query = {
+      is_archived: false,
+      $or: [
+        { owner_id: req.user._id },
+        { members: req.user._id } 
+      ]
+    };
+
+    const recentProjects = await Project.find(query)
+      .sort({ created_at: -1 })
+      .limit(3)
+      .populate('owner_id', 'username full_name email')
+      .populate('members', 'username full_name email role');
+
+    res.json({
+      projects: recentProjects
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const getProjectById = async (req, res) => {
   try {
@@ -85,38 +108,11 @@ const createProject = async (req, res) => {
       ...req.body,
       owner_id: req.user._id
     };
-
-    // Ensure owner is included in members
-    if (!projectData.members) {
-      projectData.members = [req.user._id];
-    } else if (!projectData.members.includes(req.user._id.toString())) {
-      projectData.members.push(req.user._id);
-    }
-
     const project = await Project.create(projectData);
     
-    const populatedProject = await Project.findById(project._id)
-      .populate('owner_id', 'username full_name email')
-      .populate('members', 'username full_name email role');
-
-    // Send notifications to all members
-    const memberIds = project.members.filter(id => id.toString() !== req.user._id.toString());
-    for (const memberId of memberIds) {
-      await createNotification({
-        user_id: memberId,
-        type: 'project_updated',
-        title: 'Added to New Project',
-        message: `You have been added to project: ${project.name}`,
-        related_entity: {
-          entity_type: 'Project',
-          entity_id: project._id
-        }
-      });
-    }
-
     res.status(201).json({
       message: 'Project created successfully',
-      project: populatedProject
+      project: project
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -271,5 +267,6 @@ module.exports = {
   updateProject,
   deleteProject,
   addMember,
-  removeMember
+  removeMember,
+  getRecentProjects
 };
