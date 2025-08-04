@@ -9,6 +9,7 @@ const {
   updateProject,
   deleteProject,
   addMember,
+  getMembers,
   removeMember
 } = require('../controllers/projectController');
 
@@ -25,5 +26,6 @@ router.put('/:id',validate(projectSchemas.update), updateProject);
 router.delete('/:id', authorize('Admin', 'Project Manager'), deleteProject);
 router.post('/:id/members', addMember);
 router.delete('/:id/members/:user_id', removeMember);
+router.get('/:id/members', getMembers);
 
 module.exports = router;

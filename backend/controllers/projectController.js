@@ -109,10 +109,11 @@ const createProject = async (req, res) => {
       owner_id: req.user._id
     };
     const project = await Project.create(projectData);
-    
+    const populatedProject = await Project.findById(project._id)
+      .populate('owner_id', 'username full_name email')
     res.status(201).json({
       message: 'Project created successfully',
-      project: project
+      project: populatedProject
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -130,7 +131,7 @@ const updateProject = async (req, res) => {
     }
 
     // Check permissions
-    const canUpdate = req.user.role === 'Admin' || 
+    const canUpdate = 
                      project.owner_id.toString() === req.user._id.toString();
 
     if (!canUpdate) {
@@ -191,7 +192,7 @@ const addMember = async (req, res) => {
     }
 
     // Check permissions
-    const canAddMember = req.user.role === 'Admin' || 
+    const canAddMember =
                         project.owner_id.toString() === req.user._id.toString();
 
     if (!canAddMember) {
@@ -207,6 +208,7 @@ const addMember = async (req, res) => {
     await project.save();
 
     const updatedProject = await Project.findById(id)
+      .populate('owner_id', 'username full_name email')
       .populate('members', 'username full_name email role');
 
     // Notify the new member
@@ -225,6 +227,21 @@ const addMember = async (req, res) => {
       message: 'Member added successfully',
       project: updatedProject
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const getMembers = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const project = await Project.findById(id).populate('members'); // <-- lấy toàn bộ thông tin User
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json({ members: project.members });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -268,5 +285,7 @@ module.exports = {
   deleteProject,
   addMember,
   removeMember,
+  getMembers,
   getRecentProjects
+
 };

@@ -27,6 +27,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     'Dự án đã hoàn thành',
     'Dự án đã hủy',
   ];
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +52,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         await projectProvider.fetchProjects(token!);
       }
     } catch (e) {
-      print('Error initializing HomeScreen: $e');
+      print('Error initializing: $e');
     }
   }
 
@@ -241,30 +242,34 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                   ),
                                 );
                               }
+
+                              // Lọc danh sách dự án dựa trên bộ lọc được chọn
+                              final filteredProjects = _filterProjects(
+                                projectProvider.projects,
+                              );
+
+                              if (filteredProjects.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    'Không có dự án nào phù hợp với bộ lọc',
+                                    style: TextStyle(
+                                      fontSize: 16.sp,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                );
+                              }
+
                               return Container(
                                 width: double.infinity,
                                 height:
                                     MediaQuery.of(context).size.height - 330.h,
                                 child: ListView.builder(
                                   itemBuilder: (context, index) {
-                                    final projectProvider =
-                                        Provider.of<ProjectProvider>(context);
-                                    if (projectProvider.projects.isEmpty) {
-                                      return Center(
-                                        child: Text(
-                                          'Không có dự án nào',
-                                          style: TextStyle(
-                                            fontSize: 16.sp,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    final project =
-                                        projectProvider.projects[index];
+                                    final project = filteredProjects[index];
                                     return ProjectCardAll(project: project);
                                   },
-                                  itemCount: projectProvider.projects.length,
+                                  itemCount: filteredProjects.length,
                                 ),
                               );
                             },
@@ -286,6 +291,30 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ),
       ),
     );
+  }
+
+  List<Project> _filterProjects(List<Project> projects) {
+    switch (_selectedFilter) {
+      case 'Dự án chưa thực hiện':
+        return projects
+            .where((project) => project.status == 'Not Started')
+            .toList();
+      case 'Dự án đang thực hiện':
+        return projects
+            .where((project) => project.status == 'In Progress')
+            .toList();
+      case 'Dự án đã hoàn thành':
+        return projects
+            .where((project) => project.status == 'Completed')
+            .toList();
+      case 'Dự án đã hủy':
+        return projects
+            .where((project) => project.status == 'Cancelled')
+            .toList();
+      case 'Tất cả':
+      default:
+        return projects;
+    }
   }
 
   void _showFilterBottomSheet() {
