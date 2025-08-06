@@ -2,63 +2,106 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/models/user_model.dart';
+import 'package:project_hub/providers/auth_provider.dart';
+import 'package:project_hub/providers/project_provider.dart';
 import 'package:project_hub/screens/project/add_member.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/services/storage_service.dart';
+import 'package:provider/provider.dart';
 
 class MemberListScreen extends StatefulWidget {
   final Project project;
-  const MemberListScreen({Key? key, required this.project}) : super(key: key);
+  final bool isManager;
+  const MemberListScreen({
+    Key? key,
+    required this.project,
+    required this.isManager,
+  }) : super(key: key);
   @override
   _MemberListScreenState createState() => _MemberListScreenState();
 }
 
 class _MemberListScreenState extends State<MemberListScreen> {
+  String? token;
+  String? refreshToken;
   @override
   void initState() {
     super.initState();
+    _initializeData();
   }
 
-  void _removeMember(ProjectMember member) {
-    showDialog(
+  Future<void> _initializeData() async {
+    try {
+      final loadedToken = await StorageService.getToken();
+      final loadedRefreshToken = await StorageService.getRefreshToken();
+
+      setState(() {
+        token = loadedToken;
+        refreshToken = loadedRefreshToken;
+      });
+
+      if (token != null && mounted) {
+        final projectProvider = Provider.of<ProjectProvider>(
+          context,
+          listen: false,
+        );
+        await projectProvider.fetchProjectMembers(
+          widget.project.id ?? '',
+          token!,
+        );
+      }
+    } catch (e) {
+      print('Error initializing: $e');
+    }
+  }
+
+  Future<void> _removeMember(User member) {
+    return showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: Text(
-            'Xóa thành viên',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
-          ),
+          title: Text('Xác nhận xóa thành viên'),
           content: Text(
-            'Bạn có chắc chắn muốn xóa  khỏi dự án?',
-            style: TextStyle(fontSize: 14.sp),
+            'Bạn có chắc chắn muốn xóa ${member.fullName} khỏi dự án này?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Hủy',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
-              ),
+              child: Text('Hủy'),
             ),
             TextButton(
-              onPressed: () {
-                setState(() {});
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Đã xóa  khỏi dự án'),
-                    backgroundColor: Colors.orange,
-                    behavior: SnackBarBehavior.floating,
-                  ),
+              onPressed: () async {
+                final projectProvider = Provider.of<ProjectProvider>(
+                  context,
+                  listen: false,
                 );
+                bool sucess = await projectProvider.removeMemberFromProject(
+                  id: widget.project.id ?? '',
+                  token: token ?? '',
+                  userId: member.id ?? '',
+                );
+                if (sucess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${member.fullName} đã được xóa khỏi dự án',
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Không thể xóa thành viên'),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
-              child: Text(
-                'Xóa',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: Text('Xóa'),
             ),
           ],
         );
@@ -66,7 +109,8 @@ class _MemberListScreenState extends State<MemberListScreen> {
     );
   }
 
-  void _showMemberDetails(ProjectMember member) {
+  void _showMemberDetails(User member) {
+    final userProvider = Provider.of<AuthProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -103,25 +147,32 @@ class _MemberListScreenState extends State<MemberListScreen> {
                         // Header
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 32.r,
-                              backgroundColor: Color(0xFF6C63FF),
-                              child: Text(
-                                'member.name[0].toUpperCase()',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24.sp,
-                                  fontWeight: FontWeight.bold,
+                            (member.avatar == 'None' || member.avatar == '')
+                                ? CircleAvatar(
+                                  radius: 32.r,
+                                  backgroundColor: Color(0xFF6C63FF),
+                                  child: Text(
+                                    member.fullName[0].toUpperCase(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
+                                : CircleAvatar(
+                                  radius: 32.r,
+                                  backgroundImage: NetworkImage(
+                                    member.avatar ?? '',
+                                  ),
                                 ),
-                              ),
-                            ),
                             SizedBox(width: 16.w),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    ' member.name',
+                                    member.fullName,
                                     style: TextStyle(
                                       fontSize: 20.sp,
                                       fontWeight: FontWeight.bold,
@@ -139,7 +190,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                                       borderRadius: BorderRadius.circular(16.r),
                                     ),
                                     child: Text(
-                                      'member.role',
+                                      member.role,
                                       style: TextStyle(
                                         fontSize: 12.sp,
                                         color: Color(0xFF6C63FF),
@@ -169,88 +220,121 @@ class _MemberListScreenState extends State<MemberListScreen> {
 
                         _buildDetailRow('Email', member.email, Icons.email),
                         SizedBox(height: 16.h),
-                        _buildDetailRow('Vai trò', 'member.role', Icons.work),
+                        _buildDetailRow('Vai trò', member.role, Icons.work),
                         SizedBox(height: 16.h),
 
-                        _buildDetailRow(
-                          'Ngày tham gia',
-                          '',
-                          Icons.calendar_today,
-                        ),
                         SizedBox(height: 16.h),
 
-                        // _buildDetailRow(
-                        //   'Trạng thái',
-                        //   member.isActive
-                        //       ? 'Đang hoạt động'
-                        //       : 'Không hoạt động',
-                        //   Icons.circle,
-                        //   statusColor:
-                        //       member.isActive ? Colors.green : Colors.red,
-                        // ),
                         Spacer(),
 
                         // Actions
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _removeMember(member);
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  side: BorderSide(color: Colors.red),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                                ),
-                                child: Text(
-                                  'Xóa khỏi dự án',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  // Handle send message
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Tính năng nhắn tin đang phát triển',
+                        widget.isManager
+                            ? Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _removeMember(member);
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                      side: BorderSide(color: Colors.red),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
-                                      backgroundColor: Colors.blue,
-                                      behavior: SnackBarBehavior.floating,
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16.h,
+                                      ),
                                     ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFF6C63FF),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.r),
+                                    child: Text(
+                                      'Xóa khỏi dự án',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Tính năng nhắn tin đang phát triển',
+                                          ),
+                                          backgroundColor: Colors.blue,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFF6C63FF),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16.h,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Nhắn tin',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : userProvider.user?.id == member.id
+                            ? InkWell(
+                              onTap: () {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Tính năng rời dự án đang phát triển',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 58.h,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 16.h,
+                                  horizontal: 24.w,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12.r),
                                 ),
                                 child: Text(
-                                  'Nhắn tin',
+                                  'Rời dự án',
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14.sp,
+                                    color: Colors.red,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                            )
+                            : SizedBox.shrink(),
 
                         SizedBox(height: 24.h),
                       ],
@@ -281,125 +365,99 @@ class _MemberListScreenState extends State<MemberListScreen> {
               colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
             ),
           ),
-          child: Column(
-            children: [
-              TopBar(isBack: true),
-
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20.r),
-                      topRight: Radius.circular(20.r),
-                    ),
+          child: Consumer<ProjectProvider>(
+            builder: (context, projectProvider, child) {
+              if (projectProvider.isLoading) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (projectProvider.errorMessage != null) {
+                return Center(
+                  child: Text(
+                    projectProvider.errorMessage!,
+                    style: TextStyle(color: Colors.red, fontSize: 16.sp),
                   ),
-                  child: Column(
-                    children: [
-                      // Header Section
-                      Container(
-                        padding: EdgeInsets.all(20.r),
-                        child: Column(
-                          children: [
-                            // Stats Row
-                            Row(
+                );
+              }
+              return Column(
+                children: [
+                  TopBar(isBack: true),
+
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(color: Colors.white),
+                      child: Column(
+                        children: [
+                          // Header Section
+                          Container(
+                            padding: EdgeInsets.all(20.r),
+                            child: Column(
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.all(16.r),
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF6C63FF).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          '{_members.length}',
-                                          style: TextStyle(
-                                            fontSize: 24.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF6C63FF),
-                                          ),
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          'Tổng thành viên',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                Container(
+                                  padding: EdgeInsets.all(16.r),
+                                  height: 100.h,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF6C63FF).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12.r),
                                   ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Expanded(
-                                  child: Container(
-                                    padding: EdgeInsets.all(16.r),
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFF4CAF50).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          '{_members.where((m) => m.isActive).length}',
-                                          style: TextStyle(
-                                            fontSize: 24.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF4CAF50),
-                                          ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        projectProvider.members.length
+                                            .toString(),
+                                        style: TextStyle(
+                                          fontSize: 24.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF6C63FF),
                                         ),
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          'Đang hoạt động',
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.grey[600],
-                                          ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        'Tổng thành viên',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: Colors.grey[600],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
+                          ),
 
-                            SizedBox(height: 20.h),
-                          ],
-                        ),
+                          // Member List
+                          Expanded(
+                            child:
+                                projectProvider.members.isEmpty
+                                    ? _buildEmptyState()
+                                    : ListView.builder(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 20.w,
+                                      ),
+                                      itemCount: projectProvider.members.length,
+                                      shrinkWrap: true,
+                                      itemBuilder: (context, index) {
+                                        return _buildMemberCard(
+                                          projectProvider.members[index],
+                                        );
+                                      },
+                                    ),
+                          ),
+                        ],
                       ),
-
-                      // Member List
-                      Expanded(
-                        child:
-                            widget.project.members!.isEmpty
-                                ? _buildEmptyState()
-                                : ListView.builder(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 20.w,
-                                  ),
-                                  itemCount: widget.project.members!.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildMemberCard(
-                                      widget.project.members![index],
-                                    );
-                                  },
-                                ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMemberCard(ProjectMember member) {
+  Widget _buildMemberCard(User member) {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       child: InkWell(
@@ -422,32 +480,37 @@ class _MemberListScreenState extends State<MemberListScreen> {
             children: [
               Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 28.r,
-                    backgroundColor: Color(0xFF6C63FF),
-                    child: Text(
-                      'member.name[0].toUpperCase()',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
+                  member.avatar == 'None'
+                      ? CircleAvatar(
+                        radius: 28.r,
+                        backgroundColor: Color(0xFF6C63FF),
+                        child: Text(
+                          member.fullName[0].toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                      : CircleAvatar(
+                        radius: 28.r,
+                        backgroundImage: NetworkImage(member.avatar ?? ''),
+                      ),
+                  if (member.isActive)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 16.w,
+                        height: 16.h,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
                       ),
                     ),
-                  ),
-                  // if (member.isActive)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 16.w,
-                      height: 16.h,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
                 ],
               ),
               SizedBox(width: 16.w),
@@ -456,7 +519,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'member.name',
+                      member.fullName,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
@@ -464,43 +527,24 @@ class _MemberListScreenState extends State<MemberListScreen> {
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Text(
-                      member.email,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.grey[600],
+
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
                       ),
-                    ),
-                    SizedBox(height: 6.h),
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF6C63FF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Text(
-                            'member.role',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Color(0xFF6C63FF),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF6C63FF).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        member.role,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: Color(0xFF6C63FF),
+                          fontWeight: FontWeight.w500,
                         ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          'Tham gia  ngày trước',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -532,10 +576,26 @@ class _MemberListScreenState extends State<MemberListScreen> {
               color: Colors.grey[600],
             ),
           ),
-          SizedBox(height: 8.h),
-          Text(
-            'Nhấn nút + để thêm thành viên mới',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey[500]),
+          SizedBox(height: 80.h),
+          Container(
+            height: 60.h,
+            width: 60.w,
+            decoration: BoxDecoration(
+              color: Color(0xFF6C63FF),
+              borderRadius: BorderRadius.circular(50.r),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.add, color: Colors.white, size: 32.sp),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => AddMemberScreen(project: widget.project),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

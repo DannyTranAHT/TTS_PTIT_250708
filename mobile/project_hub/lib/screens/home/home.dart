@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/models/user_model.dart';
 import 'package:project_hub/providers/project_provider.dart';
+import 'package:project_hub/providers/task_provider.dart';
+import 'package:project_hub/screens/project/project_detail.dart';
 import 'package:project_hub/screens/widgets/bottom_bar.dart';
 import 'package:project_hub/screens/widgets/project_card.dart';
 import 'package:project_hub/screens/widgets/stat_card.dart';
@@ -52,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         await projectProvider.fetchProjects(token!);
         await projectProvider.fetchRecentProjects(token!);
+
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        await taskProvider.fetchMyTasks(token!);
       }
     } catch (e) {
       print('Error initializing HomeScreen: $e');
@@ -141,12 +146,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           SizedBox(height: 16.h),
 
-                          // Thống kê dự án
+                          // Thống kê dự án - CHỈ SỬA: Consumer thành Consumer2
                           Container(
                             height: 230.h,
-                            child: Consumer<ProjectProvider>(
-                              builder: (context, projectProvider, child) {
-                                if (projectProvider.isLoading) {
+                            child: Consumer2<ProjectProvider, TaskProvider>(
+                              builder: (
+                                context,
+                                projectProvider,
+                                taskProvider,
+                                child,
+                              ) {
+                                if (projectProvider.isLoading ||
+                                    taskProvider.isLoading) {
                                   return Container(
                                     color: Colors.white,
                                     child: Center(
@@ -240,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           child: StatCard(
                                             title: 'TASK TỔNG',
                                             value:
-                                                '19', // This should come from actual task count
+                                                '${taskProvider.myTasks.length}',
                                             subtitle: '+7 hôm nay',
                                             color: Color(0xFF2196F3),
                                             icon: Icons.task_alt_outlined,
@@ -447,7 +458,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           project.numTasks
                                                               .toString(),
                                                       status: project.status,
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (
+                                                                  context,
+                                                                ) => ProjectDetailScreen(
+                                                                  project:
+                                                                      project,
+                                                                ),
+                                                          ),
+                                                        );
+                                                      },
                                                     ),
                                                   );
                                                 },
@@ -460,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                           SizedBox(height: 27.h),
-                          // Task của tôi
+                          // Task của tôi - GIỮ NGUYÊN HARDCODE DATA
                           Container(
                             padding: EdgeInsets.only(
                               left: 16.w,

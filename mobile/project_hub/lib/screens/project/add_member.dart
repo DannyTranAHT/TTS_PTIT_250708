@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/models/user_model.dart';
 import 'package:project_hub/providers/auth_provider.dart';
 import 'package:project_hub/providers/project_provider.dart';
@@ -7,8 +8,8 @@ import 'package:project_hub/screens/widgets/top_bar.dart';
 import 'package:provider/provider.dart';
 
 class AddMemberScreen extends StatefulWidget {
-  final String projectId;
-  const AddMemberScreen({Key? key, required this.projectId}) : super(key: key);
+  final Project project;
+  const AddMemberScreen({Key? key, required this.project}) : super(key: key);
   @override
   _AddMemberScreenState createState() => _AddMemberScreenState();
 }
@@ -99,13 +100,46 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         );
         return;
       }
-
+      if (_selectedUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Vui lòng tìm kiếm người dùng trước'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      // Check if the user is the project owner
+      if (_selectedUser!.id == widget.project.owner?.id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể thêm chủ sở hữu dự án'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      //Check if the user is already a member
+      if (widget.project.members!.any(
+        (member) => member.id == _selectedUser!.id,
+      )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Người dùng đã là thành viên của dự án này'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
       final projectProvider = Provider.of<ProjectProvider>(
         context,
         listen: false,
       );
       final success = await projectProvider.addMemberToProject(
-        id: widget.projectId,
+        id: widget.project.id ?? '',
         userId: _selectedUser?.id ?? '',
         token: token,
       );

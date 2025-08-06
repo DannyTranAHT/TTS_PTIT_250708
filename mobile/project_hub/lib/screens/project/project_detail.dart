@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/config/status_config.dart';
 import 'package:project_hub/models/project_model.dart';
+import 'package:project_hub/models/user_model.dart';
+import 'package:project_hub/providers/auth_provider.dart';
 import 'package:project_hub/providers/project_provider.dart';
+import 'package:project_hub/providers/task_provider.dart';
 import 'package:project_hub/screens/project/add_member.dart';
 import 'package:project_hub/screens/project/member_list.dart';
+import 'package:project_hub/screens/project/project_setting.dart';
 import 'package:project_hub/screens/task/task_list.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
 import 'package:project_hub/services/storage_service.dart';
@@ -20,6 +24,7 @@ class ProjectDetailScreen extends StatefulWidget {
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   String? token;
   String? refreshToken;
+  bool isManager = false;
   final List<Map<String, Widget>> _tabs = [
     {
       'name': Text(
@@ -78,10 +83,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           listen: false,
         );
         await projectProvider.fetchProject(widget.project.id ?? '', token!);
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.getUserProfile();
+        if (authProvider.user?.id == widget.project.owner?.id) {
+          setState(() {
+            isManager = true;
+          });
+        }
       }
     } catch (e) {
       print('Error initializing: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -175,7 +192,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                           child: Text(
                                             StatusConfig.changeStatus(
                                               project?.status ?? 'Not Started',
-                                            ),
+                                            ).toUpperCase(),
                                             style: TextStyle(
                                               fontSize: 10.sp,
                                               color: StatusConfig.statusColor(
@@ -207,15 +224,42 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                   ) {
                                     return InkWell(
                                       onTap: () {
+                                        if (isManager == false) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Bạn không có quyền truy cập vào chức năng này.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         if (index == 0) {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder:
                                                   (context) => AddMemberScreen(
-                                                    projectId:
-                                                        project!.id ?? '',
+                                                    project: project!,
                                                   ),
+                                            ),
+                                          );
+                                        } else if (index == 1) {
+                                        } else if (index == 2) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      ProjectSettingsDialog(
+                                                        project: widget.project,
+                                                        token: token ?? '',
+                                                      ),
                                             ),
                                           );
                                         }
@@ -286,7 +330,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                       project?.numTasks.toString() ?? '0',
                                       'TỔNG TASKS',
                                       'Xem',
-                                      () {},
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => TaskListScreen(
+                                                  project: project!,
+                                                  isManager: isManager,
+                                                ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                   SizedBox(width: 12.w),
@@ -316,7 +371,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                           MaterialPageRoute(
                                             builder:
                                                 (context) => MemberListScreen(
-                                                  project: project!,
+                                                  project: project,
+                                                  isManager: isManager,
                                                 ),
                                           ),
                                         );
@@ -427,7 +483,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                     SizedBox(height: 12.h),
                                     _buildInfoRow(
                                       'BUDGET',
-                                      '${project.budget?.toString() ?? 'N/A'}',
+                                      '${project.budget.toString()}',
                                     ),
                                     SizedBox(height: 12.h),
                                   ],
