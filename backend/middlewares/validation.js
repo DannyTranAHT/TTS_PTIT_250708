@@ -46,7 +46,7 @@ const projectSchemas = {
     description: Joi.string().allow(null, ''),
     start_date: Joi.date(),
     end_date: Joi.date(),
-    status: Joi.string().valid('Not Started', 'In Progress', 'Completed'),
+    status: Joi.string().valid('Not Started', 'In Progress', 'Completed', 'On Hold', 'Cancelled'),
     priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical'),
     members: Joi.array().items(Joi.string().length(24)),
     progress: Joi.number().min(0).max(100),

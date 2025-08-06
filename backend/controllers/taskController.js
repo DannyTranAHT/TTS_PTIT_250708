@@ -86,6 +86,7 @@ const getAllTasks = async (req, res) => {
 
     const total = await Task.countDocuments(query);
     const tasks = await Task.find(query)
+      .populate('project_id', 'name status')
       .populate('assigned_to_id', 'username full_name email avatar')
       .sort({ due_date: 1 }) // Sắp xếp theo hạn
       .skip((page - 1) * limit)
@@ -119,7 +120,10 @@ const getTaskById = async (req, res) => {
     if (!isMember) {
       return res.status(403).json({ message: 'Permission denied' });
     }
-    res.json({ task });
+    const populatedTask = await Task.findById(task._id)
+    .populate('project_id', 'name status')
+    .populate('assigned_to_id', 'username full_name email avatar');
+    res.json({ task : populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -153,7 +157,20 @@ const assignMemberToTask = async (req, res) => {
     }
     task.assigned_to_id = user_id;
     await task.save();
-    res.json({ message: 'Assigned member to task successfully', task });
+    await createNotification({
+      user_id,
+      type: 'task_assigned',
+      title: 'Task Assigned',
+      message: `You have been assigned to a task: ${task.name}`,
+      related_entity: {
+        entity_type: 'Task',
+        entity_id: task._id
+      }
+    });
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
+    res.json({ message: 'Assigned member to task successfully', task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -164,6 +181,7 @@ const unassignMemberFromTask = async (req, res) => {
   try {
     const { id } = req.params; // id của task
     const task = await Task.findById(id);
+    const { user_id } = req.body;
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -180,7 +198,20 @@ const unassignMemberFromTask = async (req, res) => {
     }
     task.assigned_to_id = null;
     await task.save();
-    res.json({ message: 'Unassigned member from task successfully', task });
+    await createNotification({
+      user_id: user_id,
+      type: 'task_updated',
+      title: 'Task Unassigned',
+      message: `You have been unassigned from the task: ${task.name}`,
+      related_entity: {
+        entity_type: 'Task',
+        entity_id: task._id
+      }
+    });
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
+    res.json({ message: 'Unassigned member from task successfully', task : populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -251,10 +282,10 @@ const requestCompleteTask = async (req, res) => {
     // Đánh dấu trạng thái yêu cầu hoàn thành (dùng status hoặc thêm trường tạm thời)
     task.status = 'In Review';
     await task.save();
-    
+    const project = await Project.findById(task.project_id);
     await createNotification({
-      user_id: task.createdBy,
-      type: 'task_completion_requested',
+      user_id: project.owner_id,
+      type: 'task_updated',
       title: 'Task Completion Requested',
       message: `Task ${task.name} has been requested for completion by ${req.user.username}`,
       related_entity: {
@@ -262,8 +293,11 @@ const requestCompleteTask = async (req, res) => {
         entity_id: task._id
       }
     });
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
 
-    res.json({ message: 'Completion request sent. Waiting for confirmation from creator.', task });
+    res.json({ message: 'Completion request sent. Waiting for confirmation from creator.', task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -278,8 +312,9 @@ const confirmCompleteTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    const project = await Project.findById(task.project_id);
     // Chỉ creator mới xác nhận
-    if (!task.createdBy || task.createdBy.toString() !== req.user._id.toString()) {
+    if (!project.owner_id || project.owner_id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only creator can confirm completion' });
     }
     if (task.status !== 'In Review') {
@@ -289,7 +324,7 @@ const confirmCompleteTask = async (req, res) => {
       task.status = 'Done';
       await createNotification({
         user_id: task.assigned_to_id,
-        type: 'task_completed',
+        type: 'task_updated',
         title: 'Task Completed',
         message: `Task ${task.name} has been confirmed as completed by ${req.user.username}`,
         related_entity: {
@@ -301,7 +336,7 @@ const confirmCompleteTask = async (req, res) => {
       task.status = 'Blocked';
       await createNotification({
         user_id: task.assigned_to_id,
-        type: 'task_not_completed',
+        type: 'task_updated',
         title: 'Task Not Completed',
         message: `Task ${task.name} has been marked as not completed by ${req.user.username}`,
         related_entity: {
@@ -311,9 +346,12 @@ const confirmCompleteTask = async (req, res) => {
       });
     }
     await task.save();
+    const populatedTask = await Task.findById(task._id)
+      .populate('project_id', 'name status')
+      .populate('assigned_to_id', 'username full_name email avatar');
     
     
-    res.json({ message: confirm ? 'Task confirmed as completed.' : 'Task marked as not completed.', task });
+    res.json({ message: confirm ? 'Task confirmed as completed.' : 'Task marked as not completed.', task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
