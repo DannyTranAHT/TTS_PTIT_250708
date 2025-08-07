@@ -1,6 +1,6 @@
 const Project = require('../models/Project');
 const { createNotification } = require('../services/notificationService');
-
+const Task = require('../models/Task');
 const getAllProjects = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search } = req.query;
@@ -129,10 +129,7 @@ const updateProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
-
-    // Check permissions
-    const canUpdate = 
-                     project.owner_id.toString() === req.user._id.toString();
+    const canUpdate = project.owner_id.toString() === req.user._id.toString();
 
     if (!canUpdate) {
       return res.status(403).json({ message: 'Permission denied' });
@@ -252,12 +249,13 @@ const removeMember = async (req, res) => {
     const { id, user_id } = req.params;
 
     const project = await Project.findById(id);
+    const taskOfMember = await Task.find({ assigned_to: user_id, project_id: id });
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
     // Check permissions
-    const canRemoveMember = req.user.role === 'Admin' || 
+    const canRemoveMember = 
                            project.owner_id.toString() === req.user._id.toString() ;
 
     if (!canRemoveMember) {
@@ -268,10 +266,16 @@ const removeMember = async (req, res) => {
     if (project.owner_id.toString() === user_id) {
       return res.status(400).json({ message: 'Cannot remove project owner' });
     }
-
+    // Cannot remove if member has tasks assigned
+  if (taskOfMember && taskOfMember.length > 0) {
+    return res.status(400).json({ message: 'Cannot remove member with assigned tasks' });
+  }
     project.members = project.members.filter(member => member.toString() !== user_id);
     await project.save();
-    res.json({ message: 'Member removed successfully' });
+    const updatedProject = await Project.findById(id)
+      .populate('owner_id', 'username full_name email')
+      .populate('members', 'username full_name email role');
+    res.json({ message: 'Member removed successfully', project: updatedProject });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
