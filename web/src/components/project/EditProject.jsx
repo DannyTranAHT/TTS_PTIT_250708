@@ -91,6 +91,13 @@ const EditProject = () => {
 
     try {
       await updateProject(id, updatedProject);
+      // Cập nhật dữ liệu dự án trong localStorage
+      const storedProjects = localStorage.getItem("projects");
+      const projects = storedProjects ? JSON.parse(storedProjects) : [];
+      const updatedProjects = projects.map((project) =>
+        project._id === id ? { ...project, ...updatedProject } : project
+      );
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
       alert('Dự án đã được cập nhật thành công!');
       navigate('/projects');
     } catch (error) {

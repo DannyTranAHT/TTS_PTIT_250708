@@ -22,3 +22,11 @@ export const getProfile = () =>
       },
     })
     .then((res) => res.data);
+export const updateProfile = (data) =>
+  axios
+    .put(`${API_BASE}/profile`, data, {
+      headers: {
+        Authorization: localStorage.getItem('token'),
+      },
+    })
+    .then((res) => res.data);

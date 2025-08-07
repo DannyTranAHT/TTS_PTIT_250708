@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../../styles/task/MyTasks.css';
 import { getAllProjects } from '../../services/projectService';
 import { getAllTasks } from '../../services/taskService';
+import { useNavigate } from 'react-router-dom';
 
 const MyTasks = () => {
   const [projects, setProjects] = useState([]);
@@ -13,6 +14,7 @@ const MyTasks = () => {
     sort: 'newest',
     search: ''
   });
+const navigate = useNavigate();
 
   const tasksPerPage = 6;
 
@@ -72,10 +74,19 @@ const MyTasks = () => {
     // Lấy thông tin tất cả dự án
     const fetchProjects = async () => {
       try {
+        // Kiểm tra nếu đã có projects trong localStorage
+        const storedProjects = localStorage.getItem("projects");
+        if (storedProjects) {
+          setProjects(JSON.parse(storedProjects)); // Sử dụng dữ liệu từ localStorage
+          return;
+        }
+
+        // Nếu chưa có, gọi API để lấy projects
         const res = await getAllProjects();
         setProjects(res.projects);
+        localStorage.setItem("projects", JSON.stringify(res.projects)); // Lưu vào localStorage
       } catch (error) {
-        console.error('Lỗi khi lấy danh sách dự án:', error);
+        console.error("Lỗi khi lấy danh sách dự án:", error);
       }
     };
 
@@ -86,15 +97,24 @@ const MyTasks = () => {
     // Lấy danh sách tất cả task của từng dự án
     const fetchTasks = async () => {
       try {
+        // Kiểm tra nếu đã có tasks trong localStorage
+        const storedTasks = localStorage.getItem("alltasks");
+        if (storedTasks) {
+          setTasks(JSON.parse(storedTasks)); // Sử dụng dữ liệu từ localStorage
+          return;
+        }
+
+        // Nếu chưa có, gọi API để lấy tasks
         const allTasks = [];
         for (const project of projects) {
           const res = await getAllTasks(project._id);
           allTasks.push(...res.tasks);
         }
-        setTasks(allTasks); // Cập nhật state tasks sau khi lấy xong tất cả task
-        console.log('All Tasks:', allTasks);
+        setTasks(allTasks); // Cập nhật state tasks
+        localStorage.setItem("alltasks", JSON.stringify(allTasks)); // Lưu vào localStorage
+        console.log("All Tasks:", allTasks);
       } catch (error) {
-        console.error('Lỗi khi lấy danh sách task:', error);
+        console.error("Lỗi khi lấy danh sách task:", error);
       }
     };
 
@@ -185,7 +205,7 @@ const getPriorityText = (priority) => ({
 
       <div className="tasks-grid">
         {paginatedTasks.length > 0 ? paginatedTasks.map(task => (
-          <div key={task._id} className="task-card" onClick={() => alert(`Mở chi tiết task #${task.id}`)}>
+          <div key={task._id} className="task-card" onClick={() => navigate(`/tasks/${task._id}`)}>
             <div className="task-header">
               <div>
                 <h3 className="task-title">{task.name}</h3>

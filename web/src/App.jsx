@@ -14,10 +14,12 @@ import CreateTaskPage from './pages/CreateTaskPage';
 import MyTasksPage from './pages/MyTasksPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminRoute from './components/AdminRoute';
+import ManagerRoute from './components/ManagerRoute';
 import EditProfilePage from './pages/EditProfilePage';
 import TaskListPage from './pages/TaskListPage';
 import MainLayout from './components/layout/MainLayout';
 import EditProjectPage from './pages/EditProjectPage';
+import AllUsersPage from './pages/AllUsserPage';
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,9 +44,10 @@ function AppContent() {
           <Route path="/editprofile" element={<EditProfilePage />} />
           <Route path="/projects" element={<ProjectListPage />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
-          <Route path="/projects/:id/edit" element={<EditProjectPage />} />
+          <Route path="/projects/:id/edit" element={<ManagerRoute><EditProjectPage /></ManagerRoute>} />
           <Route path="/projects/:id/tasks" element={<TaskListPage />} />
-          <Route path="/projects/create" element={<CreateProject />} />
+          {/* tôi muốn phần tạo project và edit project chỉ dành cho role admin và Project Manager */}
+          <Route path="/projects/create" element={<ManagerRoute><CreateProject /></ManagerRoute>} />
           <Route path="/tasks/:id" element={<TaskDetailPage />} />
           <Route path="/tasks/create" element={<CreateTaskPage />} />
           <Route path="/tasks" element={<MyTasksPage />} />
@@ -56,6 +59,11 @@ function AppContent() {
               </AdminRoute>
             }
           />
+          <Route path="/admin/users" element={
+            <AdminRoute>
+              <AllUsersPage />
+            </AdminRoute>
+          } />
         </Route>
       
     </Routes>

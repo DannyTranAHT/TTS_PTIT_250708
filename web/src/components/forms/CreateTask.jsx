@@ -77,6 +77,11 @@ const CreateTask = () => {
     try {
       console.log('Dữ liệu gửi lên:', task);
       await createTask(task); // Gọi API tạo task
+      // Lưu task vào localStorage
+      const storedTasks = localStorage.getItem("alltasks");
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const updatedTasks = [...tasks, task];
+      localStorage.setItem("alltasks", JSON.stringify(updatedTasks)); // Cập nhật localStorage
       alert('Task đã được tạo thành công!');
       resetForm();
       window.location.href = `/tasks/${projectId}`; // Chuyển hướng đến trang danh sách task
