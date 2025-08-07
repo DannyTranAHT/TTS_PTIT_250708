@@ -383,68 +383,77 @@ class _MemberListScreenState extends State<MemberListScreen> {
                   TopBar(isBack: true),
 
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(color: Colors.white),
-                      child: Column(
-                        children: [
-                          // Header Section
-                          Container(
-                            padding: EdgeInsets.all(20.r),
-                            child: Column(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(16.r),
-                                  height: 100.h,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF6C63FF).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        projectProvider.members.length
-                                            .toString(),
-                                        style: TextStyle(
-                                          fontSize: 24.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF6C63FF),
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        'Tổng thành viên',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Member List
-                          Expanded(
-                            child:
-                                projectProvider.members.isEmpty
-                                    ? _buildEmptyState()
-                                    : ListView.builder(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 20.w,
-                                      ),
-                                      itemCount: projectProvider.members.length,
-                                      shrinkWrap: true,
-                                      itemBuilder: (context, index) {
-                                        return _buildMemberCard(
-                                          projectProvider.members[index],
-                                        );
-                                      },
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await projectProvider.fetchProjectMembers(
+                          widget.project.id ?? '',
+                          token ?? '',
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(color: Colors.white),
+                        child: Column(
+                          children: [
+                            // Header Section
+                            Container(
+                              padding: EdgeInsets.all(20.r),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(16.r),
+                                    height: 100.h,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF6C63FF).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12.r),
                                     ),
-                          ),
-                        ],
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          projectProvider.members.length
+                                              .toString(),
+                                          style: TextStyle(
+                                            fontSize: 24.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF6C63FF),
+                                          ),
+                                        ),
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          'Tổng thành viên',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Member List
+                            Expanded(
+                              child:
+                                  projectProvider.members.isEmpty
+                                      ? _buildEmptyState()
+                                      : ListView.builder(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 20.w,
+                                        ),
+                                        itemCount:
+                                            projectProvider.members.length,
+                                        shrinkWrap: true,
+                                        itemBuilder: (context, index) {
+                                          return _buildMemberCard(
+                                            projectProvider.members[index],
+                                          );
+                                        },
+                                      ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

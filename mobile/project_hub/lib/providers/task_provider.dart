@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:project_hub/models/user_model.dart';
 import '../models/task_model.dart';
 import '../services/task_api_service.dart';
 
@@ -9,7 +8,6 @@ class TaskProvider extends ChangeNotifier {
   TaskState _state = TaskState.initial;
   String? _errorMessage;
   List<Task> _tasks = [];
-  List<Task> _myTaskOfProject = [];
   List<Task> _myTasks = [];
   Task? _selectedTask;
 
@@ -97,6 +95,44 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  // Create a new task
+  Future<bool> createTask(
+    String token,
+    String projectId,
+    String name,
+    String description,
+    DateTime dueDate,
+    String priority,
+    String estimatedHours,
+  ) async {
+    _setState(TaskState.loading);
+    _errorMessage = null;
+    try {
+      final response = await TaskApiService.createTask(
+        token: token,
+        projectId: projectId,
+        name: name,
+        description: description,
+        dueDate: dueDate,
+        priority: priority,
+        estimatedHours: estimatedHours,
+      );
+      if (response.isSuccess) {
+        _selectedTask = response.model;
+        _tasks.add(_selectedTask!);
+        _setState(TaskState.loaded);
+        print('Task created successfully: ${_selectedTask?.name}');
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } catch (e) {
+      _setError('Failed to create task: $e');
+      return false;
+    }
+  }
+
   // Assign task to user
   Future<bool> assignTaskToMember({
     required String token,
@@ -167,6 +203,7 @@ class TaskProvider extends ChangeNotifier {
       return false;
     }
   }
+
   //Request task completion
   Future<bool> requestTaskCompleted({
     required String token,
@@ -199,6 +236,7 @@ class TaskProvider extends ChangeNotifier {
       return false;
     }
   }
+
   // Confirm task completion
   Future<bool> confirmTaskCompleted({
     required String token,

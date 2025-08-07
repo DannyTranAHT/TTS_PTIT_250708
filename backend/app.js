@@ -18,6 +18,7 @@ const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const notificationRoutes = require('./routes/notifications');
 const commentRoutes = require('./routes/comments');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -54,8 +55,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static files - serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
@@ -88,7 +89,8 @@ app.get('/api', (req, res) => {
       '/api/users',
       '/api/tasks',
       '/api/comments',
-      '/api/notifications'
+      '/api/notifications',
+      '/api/upload'
     ]
   });
 });
@@ -100,15 +102,26 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
-    availableRoutes: ['/api/auth', '/api/projects', '/api/users', '/api/tasks', '/api/comments', '/api/notifications'],
+    availableRoutes: [
+      '/api/auth', 
+      '/api/projects', 
+      '/api/users', 
+      '/api/tasks', 
+      '/api/comments', 
+      '/api/notifications',
+      '/api/upload'
+    ],
     documentation: '/api-docs'
   });
 });
+
+
 
 // Error handling middleware
 app.use(errorHandler);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/providers/auth_provider.dart';
 import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/auth/login.dart';
@@ -85,7 +86,13 @@ class TopBar extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 20.r,
-                            backgroundImage: AssetImage(AppImages.avt),
+                            backgroundImage:
+                                (authProvider.user?.avatar == "None" ||
+                                        authProvider.errorMessage != null)
+                                    ? AssetImage(AppImages.avt)
+                                    : NetworkImage(
+                                      '${ApiConfig.socketUrl}/${authProvider.user!.avatar!}',
+                                    ),
                           ),
                           SizedBox(width: 8.w),
                           IconButton(

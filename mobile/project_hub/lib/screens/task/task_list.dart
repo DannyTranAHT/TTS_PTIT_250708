@@ -30,7 +30,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _hoursController = TextEditingController();
-  String? _selectedMember = 'None';
   String? _selectedPriority = 'Medium';
   DateTime? _dueDate;
 
@@ -59,6 +58,40 @@ class _TaskListScreenState extends State<TaskListScreen> {
       }
     } catch (e) {
       print('Error initializing: $e');
+    }
+  }
+
+  Future<void> _createTask() async {
+    if (token == null) return;
+
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    bool success = await taskProvider.createTask(
+      token!,
+      widget.project.id ?? '',
+      _nameController.text,
+      _descriptionController.text,
+      _dueDate!,
+      _selectedPriority!,
+      _hoursController.text,
+    );
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Task created successfully'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context);
+      _resetForm();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create task'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -306,279 +339,201 @@ class _TaskListScreenState extends State<TaskListScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          // Sử dụng StatefulBuilder để setState trong dialog
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              title: Text(
-                'Tạo task mới',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D2D2D),
-                ),
-              ),
-              content: Container(
-                width: double.maxFinite,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.7,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _nameController,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Tên task *',
-                          hintText: 'Nhập tên task (tối đa 200 ký tự)',
-                          labelStyle: TextStyle(fontSize: 14.sp),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            'Tạo task mới',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D2D2D),
+            ),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _nameController,
+                    style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
+                    decoration: InputDecoration(
+                      labelText: 'Tên task *',
+                      hintText: 'Nhập tên task (tối đa 200 ký tự)',
+                      labelStyle: TextStyle(fontSize: 14.sp),
 
-                          hintStyle: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.grey[500],
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        maxLength: 200,
+                      hintStyle: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.grey[500],
                       ),
-                      SizedBox(height: 5.h),
-                      TextField(
-                        controller: _descriptionController,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Mô tả',
-                          hintText: 'Nhập mô tả task (không bắt buộc)',
-                          labelStyle: TextStyle(fontSize: 14.sp),
-                          hintStyle: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.grey[500],
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        maxLines: 2,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
-                      SizedBox(height: 12.h),
-                      GestureDetector(
-                        onTap: () async {
-                          final selectedDate = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (selectedDate != null) {
-                            setStateDialog(() {
-                              _dueDate = selectedDate;
-                            });
-                          }
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 12.h,
-                            horizontal: 16.w,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[600]!),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _dueDate == null
-                                    ? 'Ngày hết hạn *'
-                                    : '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color:
-                                      _dueDate == null
-                                          ? Colors.grey[600]
-                                          : Color(0xFF2D2D2D),
-                                ),
-                              ),
-                              Icon(
-                                Icons.calendar_today,
-                                size: 16.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
-                      DropdownButtonFormField<String>(
-                        value: _selectedPriority,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Độ ưu tiên',
-                          labelStyle: TextStyle(fontSize: 14.sp),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        items:
-                            ['Low', 'Medium', 'High', 'Critical']
-                                .map(
-                                  (priority) => DropdownMenuItem(
-                                    value: priority,
-                                    child: Text(
-                                      priority,
-                                      style: TextStyle(fontSize: 14.sp),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                        onChanged: (value) {
-                          setStateDialog(() {
-                            _selectedPriority = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 12.h),
-                      DropdownButtonFormField<String>(
-                        value: _selectedMember,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Người thực hiện',
-                          hintText: 'Chọn người thực hiện',
-                          labelStyle: TextStyle(fontSize: 14.sp),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        items:
-                            [
-                              DropdownMenuItem<String>(
-                                value: null,
-                                child: Flexible(
-                                  child: Text(
-                                    'Chọn người thực hiện',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.grey[600],
-                                    ),
-                                    overflow:
-                                        TextOverflow
-                                            .ellipsis, // Cắt bớt văn bản nếu quá dài
-                                  ),
-                                ),
-                              ),
-                              ...[
-                                'None',
-                                'Nguyễn Văn A',
-                                'Trần Thị B',
-                                'Lê Văn C',
-                              ].map(
-                                (status) => DropdownMenuItem(
-                                  value: status,
-                                  child: Flexible(
-                                    child: Text(
-                                      status,
-                                      style: TextStyle(fontSize: 14.sp),
-                                      overflow:
-                                          TextOverflow
-                                              .ellipsis, // Cắt bớt văn bản nếu quá dài
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ].toList(),
-                        onChanged: (value) {
-                          setStateDialog(() {
-                            _selectedMember = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 12.h),
-                      TextField(
-                        controller: _hoursController,
-                        decoration: InputDecoration(
-                          labelText: 'Số giờ làm việc',
-                          hintText: 'Nhập số giờ (không bắt buộc)',
-                          labelStyle: TextStyle(fontSize: 14.sp),
-                          hintStyle: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.grey[500],
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      SizedBox(height: 12.h),
-                    ],
+                    ),
+                    maxLength: 200,
                   ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Hủy',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                  SizedBox(height: 5.h),
+                  TextField(
+                    controller: _descriptionController,
+                    style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
+                    decoration: InputDecoration(
+                      labelText: 'Mô tả',
+                      hintText: 'Nhập mô tả task (không bắt buộc)',
+                      labelStyle: TextStyle(fontSize: 14.sp),
+                      hintStyle: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.grey[500],
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    maxLines: 2,
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_validateTask()) {
-                      final taskData = {
-                        'project_id': 'mock_project_id',
-                        'name': _nameController.text,
-                        'description':
-                            _descriptionController.text.isEmpty
-                                ? null
-                                : _descriptionController.text,
-                        'due_date': _dueDate?.toIso8601String(),
-                        'status': 'To Do',
-                        'priority': _selectedPriority,
-                        'assigned_to_id': _selectedMember,
-                        'hours': int.tryParse(_hoursController.text) ?? 0,
-                        'attachments': [],
-                      };
-                      print('Dữ liệu task: $taskData');
-                      Navigator.pop(context);
-                      // Reset form
-                      _resetForm();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF6C63FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
+                  SizedBox(height: 12.h),
+                  GestureDetector(
+                    onTap: () async {
+                      final selectedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (selectedDate != null) {
+                        setState(() {
+                          _dueDate = selectedDate;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 12.h,
+                        horizontal: 16.w,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[600]!),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _dueDate == null
+                                ? 'Ngày hết hạn *'
+                                : '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color:
+                                  _dueDate == null
+                                      ? Colors.grey[600]
+                                      : Color(0xFF2D2D2D),
+                            ),
+                          ),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Text(
-                    'Tạo',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.white),
+                  SizedBox(height: 22.h),
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      'Độ ưu tiên',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Color(0xFF2D2D2D),
+                      ),
+                    ),
                   ),
+                  DropdownButtonFormField<String>(
+                    value: _selectedPriority,
+                    style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
+                    decoration: InputDecoration(
+                      labelText: '',
+                      labelStyle: TextStyle(fontSize: 14.sp),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    items:
+                        ['Low', 'Medium', 'High', 'Critical']
+                            .map(
+                              (priority) => DropdownMenuItem(
+                                value: priority,
+                                child: Text(
+                                  priority,
+                                  style: TextStyle(fontSize: 14.sp),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedPriority = value;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+
+                  TextField(
+                    controller: _hoursController,
+                    decoration: InputDecoration(
+                      labelText: 'Số giờ làm việc',
+                      hintText: 'Nhập số giờ (không bắt buộc)',
+                      labelStyle: TextStyle(fontSize: 14.sp),
+                      hintStyle: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey[500],
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 12.h),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Hủy',
+                style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_validateTask()) {
+                  _createTask();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF6C63FF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
-              ],
-            );
-          },
+              ),
+              child: Text(
+                'Tạo',
+                style: TextStyle(fontSize: 14.sp, color: Colors.white),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -591,7 +546,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
     setState(() {
       _dueDate = null;
       _selectedPriority = 'Medium';
-      _selectedMember = 'None';
     });
   }
 
@@ -620,12 +574,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
       return false;
     }
-    if (_selectedMember == 'None') {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Người thực hiện là bắt buộc')));
-      return false;
-    }
+
     if (_hoursController.text.isNotEmpty &&
         int.tryParse(_hoursController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(

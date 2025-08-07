@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/providers/project_provider.dart';
-import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/project/create_project.dart';
-import 'package:project_hub/screens/project/project_detail.dart';
 import 'package:project_hub/screens/widgets/bottom_bar.dart';
 import 'package:project_hub/screens/widgets/project_card_all.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
@@ -82,199 +80,209 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 left: 0,
                 right: 0,
                 bottom: 60.h,
-                child: SingleChildScrollView(
-                  child: Container(
-                    decoration: BoxDecoration(color: Colors.white),
-                    child: Padding(
-                      padding: EdgeInsets.all(20.w),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Danh sách dự án',
-                                style: TextStyle(
-                                  fontSize: 22.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2D2D2D),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => CreateProjectScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 12.w,
-                                    vertical: 8.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Color(0xFF6C63FF),
-                                        Color(0xFF8B5FBF),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(20.r),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.add,
-                                        color: Colors.white,
-                                        size: 16.sp,
-                                      ),
-                                      SizedBox(width: 4.w),
-                                      Text(
-                                        'Tạo dự án mới',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 20.h),
-                          Container(
-                            width: double.infinity,
-                            height: 44.h,
-                            child: Row(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    _initializeData();
+                  },
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(color: Colors.white),
+                      child: Padding(
+                        padding: EdgeInsets.all(20.w),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 44.h,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      border: Border.all(
-                                        color: Color(0xFFE9ECEF),
-                                      ),
-                                    ),
-                                    child: TextField(
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        color: Color(0xFF2D2D2D),
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: 'Tìm kiếm dự án...',
-                                        hintStyle: TextStyle(
-                                          color: Colors.grey[500],
-                                          fontSize: 14.sp,
-                                        ),
-                                        prefixIcon: Icon(
-                                          Icons.search,
-                                          color: Colors.grey[500],
-                                          size: 20.sp,
-                                        ),
-                                        border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 16.w,
-                                          vertical: 12.h,
-                                        ),
-                                      ),
-                                    ),
+                                Text(
+                                  'Danh sách dự án',
+                                  style: TextStyle(
+                                    fontSize: 22.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2D2D2D),
                                   ),
                                 ),
-                                SizedBox(width: 12.w),
                                 GestureDetector(
-                                  onTap: _showFilterBottomSheet,
-                                  child: Container(
-                                    width: 44.w,
-                                    height: 44.h,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      border: Border.all(
-                                        color: Color(0xFFE9ECEF),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => CreateProjectScreen(),
                                       ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 8.h,
                                     ),
-                                    child: Icon(
-                                      Icons.filter_list,
-                                      color: Colors.grey[600],
-                                      size: 20.sp,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFF6C63FF),
+                                          Color(0xFF8B5FBF),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20.r),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add,
+                                          color: Colors.white,
+                                          size: 16.sp,
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        Text(
+                                          'Tạo dự án mới',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          SizedBox(height: 20.h),
-                          Consumer<ProjectProvider>(
-                            builder: (context, projectProvider, child) {
-                              if (projectProvider.isLoading) {
-                                return Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-
-                              if (projectProvider.projects.isEmpty) {
-                                return Center(
-                                  child: Text(
-                                    'Không có dự án nào',
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      color: Colors.grey[600],
+                            SizedBox(height: 20.h),
+                            Container(
+                              width: double.infinity,
+                              height: 44.h,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 44.h,
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: Color(0xFFE9ECEF),
+                                        ),
+                                      ),
+                                      child: TextField(
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          color: Color(0xFF2D2D2D),
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: 'Tìm kiếm dự án...',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey[500],
+                                            fontSize: 14.sp,
+                                          ),
+                                          prefixIcon: Icon(
+                                            Icons.search,
+                                            color: Colors.grey[500],
+                                            size: 20.sp,
+                                          ),
+                                          border: InputBorder.none,
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 16.w,
+                                            vertical: 12.h,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                );
-                              }
-                              if (projectProvider.errorMessage != null) {
-                                return Center(
-                                  child: Text(
-                                    projectProvider.errorMessage!,
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      color: Colors.red,
+                                  SizedBox(width: 12.w),
+                                  GestureDetector(
+                                    onTap: _showFilterBottomSheet,
+                                    child: Container(
+                                      width: 44.w,
+                                      height: 44.h,
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: Color(0xFFE9ECEF),
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.filter_list,
+                                        color: Colors.grey[600],
+                                        size: 20.sp,
+                                      ),
                                     ),
                                   ),
-                                );
-                              }
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 20.h),
+                            Consumer<ProjectProvider>(
+                              builder: (context, projectProvider, child) {
+                                if (projectProvider.isLoading) {
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
 
-                              // Lọc danh sách dự án dựa trên bộ lọc được chọn
-                              final filteredProjects = _filterProjects(
-                                projectProvider.projects,
-                              );
-
-                              if (filteredProjects.isEmpty) {
-                                return Center(
-                                  child: Text(
-                                    'Không có dự án nào phù hợp với bộ lọc',
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      color: Colors.grey[600],
+                                if (projectProvider.projects.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Không có dự án nào',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
+                                  );
+                                }
+                                if (projectProvider.errorMessage != null) {
+                                  return Center(
+                                    child: Text(
+                                      projectProvider.errorMessage!,
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                // Lọc danh sách dự án dựa trên bộ lọc được chọn
+                                final filteredProjects = _filterProjects(
+                                  projectProvider.projects,
+                                );
+
+                                if (filteredProjects.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Không có dự án nào phù hợp với bộ lọc',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                return Container(
+                                  width: double.infinity,
+                                  height:
+                                      MediaQuery.of(context).size.height -
+                                      330.h,
+                                  child: ListView.builder(
+                                    itemBuilder: (context, index) {
+                                      final project = filteredProjects[index];
+                                      return ProjectCardAll(project: project);
+                                    },
+                                    itemCount: filteredProjects.length,
                                   ),
                                 );
-                              }
-
-                              return Container(
-                                width: double.infinity,
-                                height:
-                                    MediaQuery.of(context).size.height - 330.h,
-                                child: ListView.builder(
-                                  itemBuilder: (context, index) {
-                                    final project = filteredProjects[index];
-                                    return ProjectCardAll(project: project);
-                                  },
-                                  itemCount: filteredProjects.length,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

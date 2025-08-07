@@ -105,6 +105,45 @@ class TaskApiService {
     }
   }
 
+  // Create a new task
+  static Future<ApiResponse<Task>> createTask({
+    required String token,
+    required String projectId,
+    required String name,
+    required String description,
+    required DateTime dueDate,
+    required String priority,
+    required String estimatedHours,
+  }) async {
+    final uri = Uri.parse(ApiConfig.tasks);
+    final response = await http.post(
+      uri,
+      headers: ApiConfig.authHeaders(token),
+      body: json.encode({
+        'project_id': projectId,
+        'name': name,
+        'description': description,
+        'due_date': dueDate.toIso8601String(),
+        'priority': priority,
+        'hours': estimatedHours,
+      }),
+    );
+    if (response.statusCode == 201) {
+      final data = json.decode(response.body);
+      Task task = Task.fromJson(data['task']);
+      return ApiResponse.success(
+        model: task,
+        message: 'Task created successfully',
+      );
+    } else {
+      final data = json.decode(response.body);
+      return ApiResponse.error(
+        message: data['message'] ?? 'Failed to create task',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
   //Assign task to user
   static Future<ApiResponse<Task>> assignTaskToMember({
     required String token,

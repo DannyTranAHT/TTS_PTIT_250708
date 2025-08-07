@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:project_hub/providers/auth_provider.dart';
 import 'package:project_hub/screens/widgets/avatar_card.dart';
 import 'package:project_hub/screens/widgets/bottom_bar.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
@@ -10,20 +12,154 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _nameController = TextEditingController(text: 'Nguyễn Văn A');
-  final _emailController = TextEditingController(
-    text: 'nguyenvana@example.com',
-  );
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   String _selectedRole = 'Employee';
-  String _selectedMajor = 'BE Dev';
+  String _selectedMajor = 'Other';
 
   bool _obscureOldPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isUpdatingProfile = false;
+  bool _isChangingPassword = false;
+
+  List<String> _majors = [
+    'BE Dev',
+    'FE Dev',
+    'Full Stack',
+    'UI/UX',
+    'QA',
+    'DevOps',
+    'Data Science',
+    'Mobile Dev',
+    'Business Management',
+    'Project Management',
+    'Marketing',
+    'Sales',
+    'Other',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserData();
+    });
+  }
+
+  // Ensure major is valid
+  String _validateMajor(String? major) {
+    if (major == null || major.isEmpty || !_majors.contains(major)) {
+      return 'BE Dev'; // Default value
+    }
+    return major;
+  }
+
+  void _loadUserData() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+    if (user != null) {
+      setState(() {
+        _nameController.text = user.fullName;
+        _emailController.text = user.email;
+        _selectedRole = user.role;
+        _selectedMajor = _validateMajor(user.major);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _oldPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  // Update profile info
+  Future<void> _updateProfile() async {
+    setState(() {
+      _isUpdatingProfile = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    print('Updating profile with major: $_selectedMajor');
+
+    final success = await authProvider.updateProfile(
+      fullName: _nameController.text.trim(),
+      major: _selectedMajor,
+    );
+
+    if (success) {
+      _showSnackBar('Cập nhật thông tin thành công!');
+    } else {
+      _showSnackBar(
+        'Lỗi cập nhật: ${authProvider.errorMessage}',
+        isError: true,
+      );
+    }
+
+    setState(() {
+      _isUpdatingProfile = false;
+    });
+  }
+
+  // Change password
+  Future<void> _changePassword() async {
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      _showSnackBar('Mật khẩu xác nhận không khớp!', isError: true);
+      return;
+    }
+
+    if (_newPasswordController.text.length < 6) {
+      _showSnackBar('Mật khẩu mới phải có ít nhất 6 ký tự!', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isChangingPassword = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.changePassword(
+      currentPassword: _oldPasswordController.text,
+      newPassword: _newPasswordController.text,
+    );
+
+    if (success) {
+      _oldPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+      _showSnackBar('Đổi mật khẩu thành công!');
+    } else {
+      _showSnackBar(
+        'Lỗi đổi mật khẩu: ${authProvider.errorMessage}',
+        isError: true,
+      );
+    }
+
+    setState(() {
+      _isChangingPassword = false;
+    });
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textAlign: TextAlign.left,
                           ),
                         ),
+
                         // Ảnh đại diện và nút thay đổi
                         AvatarCard(),
                         SizedBox(height: 32.h),
@@ -88,21 +225,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildTextField('HỌ VÀ TÊN', _nameController),
                         SizedBox(height: 16.h),
 
-                        _buildTextField('EMAIL', _emailController),
+                        _buildTextField(
+                          'EMAIL',
+                          _emailController,
+                          readOnly: true,
+                        ),
                         SizedBox(height: 16.h),
 
                         _buildDropdownField(
                           'VAI TRÒ',
                           _selectedRole,
-                          ['Employee', 'Manager', 'Admin'],
-                          (value) => setState(() => _selectedRole = value!),
+                          ['Employee', 'Project Manager', 'Admin'],
+                          null,
+                          readOnly: true,
                         ),
                         SizedBox(height: 16.h),
 
                         _buildDropdownField(
                           'CHUYÊN NGÀNH',
-                          _selectedMajor,
-                          ['BE Dev', 'FE Dev', 'Full Stack', 'UI/UX', 'QA'],
+                          _validateMajor(_selectedMajor),
+                          _majors,
                           (value) => setState(() => _selectedMajor = value!),
                         ),
 
@@ -119,16 +261,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: ElevatedButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Cập nhật thông tin thành công!',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
+                            onPressed:
+                                _isUpdatingProfile ? null : _updateProfile,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
@@ -136,14 +270,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
-                            child: Text(
-                              'Lưu thay đổi',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child:
+                                _isUpdatingProfile
+                                    ? CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                    : Text(
+                                      'Lưu thay đổi',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                           ),
                         ),
 
@@ -164,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Text(
                                 'Thay đổi mật khẩu',
                                 style: TextStyle(
-                                  fontSize: 18.sp,
+                                  fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF2D2D2D),
                                 ),
@@ -172,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               SizedBox(height: 16.h),
 
                               _buildPasswordField(
-                                'NHẬP MẬT KHẨU CŨ',
+                                'MẬT KHẨU HIỆN TẠI',
                                 _oldPasswordController,
                                 _obscureOldPassword,
                                 () => setState(
@@ -181,10 +320,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           !_obscureOldPassword,
                                 ),
                               ),
-                              SizedBox(height: 12.h),
+                              SizedBox(height: 16.h),
 
                               _buildPasswordField(
-                                'NHẬP MẬT KHẨU MỚI',
+                                'MẬT KHẨU MỚI',
                                 _newPasswordController,
                                 _obscureNewPassword,
                                 () => setState(
@@ -193,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           !_obscureNewPassword,
                                 ),
                               ),
-                              SizedBox(height: 12.h),
+                              SizedBox(height: 16.h),
 
                               _buildPasswordField(
                                 'XÁC NHẬN MẬT KHẨU MỚI',
@@ -205,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           !_obscureConfirmPassword,
                                 ),
                               ),
-                              SizedBox(height: 16.h),
+                              SizedBox(height: 20.h),
 
                               Container(
                                 width: double.infinity,
@@ -220,16 +359,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Đổi mật khẩu thành công!',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  },
+                                  onPressed:
+                                      _isChangingPassword
+                                          ? null
+                                          : _changePassword,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
@@ -237,14 +370,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       borderRadius: BorderRadius.circular(12.r),
                                     ),
                                   ),
-                                  child: Text(
-                                    'Lưu thay đổi',
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  child:
+                                      _isChangingPassword
+                                          ? CircularProgressIndicator(
+                                            color: Colors.white,
+                                          )
+                                          : Text(
+                                            'Đổi mật khẩu',
+                                            style: TextStyle(
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                 ),
                               ),
                             ],
@@ -270,7 +408,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool readOnly = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -287,13 +429,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           height: 48.h,
           decoration: BoxDecoration(
-            color: Color(0xFFF8F9FA),
+            color: readOnly ? Color(0xFFF5F5F5) : Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: Color(0xFFE9ECEF)),
           ),
           child: TextField(
             controller: controller,
-            style: TextStyle(fontSize: 16.sp, color: Color(0xFF2D2D2D)),
+            readOnly: readOnly,
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: readOnly ? Colors.grey[600] : Color(0xFF2D2D2D),
+            ),
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -308,8 +454,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String label,
     String value,
     List<String> items,
-    Function(String?) onChanged,
-  ) {
+    Function(String?)? onChanged, {
+    bool readOnly = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,31 +473,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           height: 48.h,
           decoration: BoxDecoration(
-            color: Color(0xFFF8F9FA),
+            color: readOnly ? Color(0xFFF5F5F5) : Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: Color(0xFFE9ECEF)),
           ),
-          child: DropdownButtonFormField<String>(
-            value: value,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
-            ),
-            items:
-                items.map((String item) {
-                  return DropdownMenuItem<String>(
-                    value: item,
+          child:
+              readOnly
+                  ? Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    alignment: Alignment.centerLeft,
                     child: Text(
-                      item,
+                      value,
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: Color(0xFF2D2D2D),
+                        color: Colors.grey[600],
                       ),
                     ),
-                  );
-                }).toList(),
-            onChanged: onChanged,
-          ),
+                  )
+                  : DropdownButtonFormField<String>(
+                    value: items.contains(value) ? value : null,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
+                    ),
+                    items:
+                        items.map((String item) {
+                          return DropdownMenuItem<String>(
+                            value: item,
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                color: Color(0xFF2D2D2D),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: onChanged,
+                  ),
         ),
       ],
     );

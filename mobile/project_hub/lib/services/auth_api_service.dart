@@ -1,6 +1,7 @@
+import 'dart:io';
+
 import '../models/user_model.dart';
 import '../models/api_response.dart';
-import 'base_api_service.dart';
 import '../config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -62,15 +63,6 @@ class AuthApiService {
     }
   }
 
-  // Get current user profile
-  static Future<ApiResponse<User>> getProfile(String token) async {
-    return await BaseApiService.get(
-      '${ApiConfig.auth}/profile',
-      (data) => User.fromJson(data),
-      token: token,
-    );
-  }
-
   //Search users by email
   static Future<ApiResponse<User>> searchUserByEmail(
     String email,
@@ -123,12 +115,139 @@ class AuthApiService {
 
   // Refresh token
   static Future<ApiResponse<AuthResult>> refreshToken(String token) async {
-    return await BaseApiService.post(
-      '${ApiConfig.auth}/refresh',
-      {},
-      (data) => AuthResult.fromJson(data),
-      token: token,
+    final uri = Uri.parse('${ApiConfig.auth}/refresh-token');
+    final response = await http.post(
+      uri,
+      headers: ApiConfig.authHeaders(token),
     );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return ApiResponse.success(
+        model: AuthResult.fromJson(data),
+        message: data['message'] ?? 'Token refreshed successfully',
+      );
+    } else {
+      return ApiResponse.error(
+        message: 'Failed to refresh token: ${response.body}',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  // Upload avatar
+  static Future<ApiResponse<User>> uploadAvatar({
+    required File imageFile,
+    required String token,
+  }) async {
+    try {
+      // Fix URL construction
+      final uploadUrl = '${ApiConfig.baseUrl}/upload/avatar';
+
+      final uri = Uri.parse(uploadUrl);
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add headers
+      request.headers.addAll(ApiConfig.authHeaders(token));
+
+      // Add file
+      final fileStream = http.ByteStream(imageFile.openRead());
+      final fileLength = await imageFile.length();
+      final multipartFile = http.MultipartFile(
+        'avatar',
+        fileStream,
+        fileLength,
+        filename: imageFile.path.split('/').last,
+      );
+      request.files.add(multipartFile);
+      ;
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      if (response.statusCode == 200) {
+        final data = json.decode(responseBody);
+        return ApiResponse.success(
+          model: data['user'] != null ? User.fromJson(data['user']) : null,
+          message: data['message'] ?? 'Avatar uploaded successfully',
+        );
+      } else {
+        final errorData = json.decode(responseBody);
+        return ApiResponse.error(
+          message: errorData['message'] ?? 'Failed to upload avatar',
+        );
+      }
+    } catch (e) {
+      return ApiResponse.error(message: 'Upload failed: $e');
+    }
+  }
+
+  // Update profile
+  static Future<ApiResponse<User>> updateProfile({
+    required String token,
+    String? fullName,
+    String? major,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.auth}/profile');
+      final body = <String, dynamic>{};
+
+      if (fullName != null) body['full_name'] = fullName;
+      if (major != null) body['major'] = major;
+      final response = await http.put(
+        uri,
+        headers: ApiConfig.authHeaders(token),
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ApiResponse.success(
+          model: User.fromJson(data['user']),
+          message: data['message'] ?? 'Profile updated successfully',
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        return ApiResponse.error(
+          message: errorData['message'] ?? 'Failed to update profile',
+        );
+      }
+    } catch (e) {
+      return ApiResponse.error(message: 'Update failed: $e');
+    }
+  }
+
+  // Change password
+  static Future<ApiResponse<String>> changePassword({
+    required String token,
+    required String userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.users}/$userId/change-password');
+      final response = await http.put(
+        uri,
+        headers: ApiConfig.authHeaders(token),
+        body: json.encode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ApiResponse.success(
+          model: 'success',
+          message: data['message'] ?? 'Password changed successfully',
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        return ApiResponse.error(
+          message: errorData['message'] ?? 'Failed to change password',
+        );
+      }
+    } catch (e) {
+      return ApiResponse.error(message: 'Password change failed: $e');
+    }
   }
 }
 

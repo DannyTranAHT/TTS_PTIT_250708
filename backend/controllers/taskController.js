@@ -54,7 +54,7 @@ const createTask = async (req, res) => {
         message: `New task assigned: ${task.name}`
       });
     }
-    res.status(201).json({ message: 'Task created successfully', task });
+    res.status(201).json({ message: 'Task created successfully', task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
