@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/auth_api_service.dart';
@@ -33,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (savedToken != null && savedUser != null) {
         // Verify token with backend
-        final response = await AuthApiService.getProfile(savedToken);
+        final response = await AuthApiService.getUserProfile(savedToken);
 
         if (response.isSuccess && response.model != null) {
           _token = savedToken;
@@ -185,6 +187,99 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e) {
       _setError('Failed to fetch user profile: $e');
+    }
+  }
+
+  // Update profile
+  Future<bool> updateProfile({String? fullName, String? major}) async {
+    if (_token == null) {
+      _setError('Not authenticated');
+      return false;
+    }
+
+    _setState(AuthState.loading);
+
+    try {
+      final response = await AuthApiService.updateProfile(
+        token: _token!,
+        fullName: fullName,
+        major: major,
+      );
+
+      if (response.isSuccess && response.model != null) {
+        _user = response.model;
+        await StorageService.saveUser(_user!);
+        _setState(AuthState.authenticated);
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } catch (e) {
+      _setError('Profile update failed: $e');
+      return false;
+    }
+  }
+
+  // Upload avatar
+  Future<bool> uploadAvatar(File imageFile) async {
+    if (_token == null) {
+      _setError('Not authenticated');
+      return false;
+    }
+
+    _setState(AuthState.loading);
+    try {
+      final response = await AuthApiService.uploadAvatar(
+        token: _token!,
+        imageFile: imageFile,
+      );
+
+      if (response.isSuccess && response.model != null) {
+        _user = response.model;
+        await StorageService.saveUser(_user!);
+        _setState(AuthState.authenticated);
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } catch (e) {
+      _setError('Avatar upload failed: $e');
+      return false;
+    }
+  }
+
+  // Change password
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_token == null || _user == null) {
+      _setError('Not authenticated');
+      return false;
+    }
+
+    _setState(AuthState.loading);
+
+    try {
+      final response = await AuthApiService.changePassword(
+        token: _token!,
+        userId: _user!.id!,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+
+      if (response.isSuccess) {
+        _setState(AuthState.authenticated);
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } catch (e) {
+      _setError('Password change failed: $e');
+      return false;
     }
   }
 

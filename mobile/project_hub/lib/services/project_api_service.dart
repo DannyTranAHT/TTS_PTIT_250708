@@ -2,7 +2,6 @@ import 'package:project_hub/models/user_model.dart';
 
 import '../models/project_model.dart';
 import '../models/api_response.dart';
-import 'base_api_service.dart';
 import '../config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -406,10 +405,23 @@ class ProjectApiService {
     String id,
     String token,
   ) async {
-    return await BaseApiService.delete(
-      '${ApiConfig.projects}/$id',
-      (data) => null,
-      token: token,
+    final uri = Uri.parse('${ApiConfig.projects}/$id');
+    final response = await http.delete(
+      uri,
+      headers: ApiConfig.authHeaders(token),
     );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return ApiResponse.success(
+        model: null,
+        message: data['message'] ?? 'Project deleted successfully',
+      );
+    } else {
+      print('HTTP error response: ${response.body}');
+      return ApiResponse.error(
+        message: 'Failed to delete project: ${response.body}',
+        statusCode: response.statusCode,
+      );
+    }
   }
 }
