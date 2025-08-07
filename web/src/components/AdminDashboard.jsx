@@ -43,16 +43,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="dashboard">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">🛠️ Project Hub</div>
-          <div className="user-info">
-            <span>Chào mừng, <strong>Nguyễn Văn A</strong> (Admin)</span>
-            <div className="user-avatar">NA</div>
-          </div>
-        </div>
-      </header>
-
       <main className="main-content-admin-dashboard">
         <section className="welcome-section">
           <div className="welcome-content">
@@ -71,7 +61,7 @@ const AdminDashboard = () => {
         <div className="recent-section">
           <SectionCard
             title="Người dùng gần đây"
-            link="/api/users"
+            link="/admin/users"
             items={[
               { icon: 'TB', name: 'Trần Thị B', role: 'Project Manager', joined: '01/07/2025', status: 'Hoạt động' },
               { icon: 'LC', name: 'Lê Văn C', role: 'Employee', joined: '28/06/2025', status: 'Hoạt động' },

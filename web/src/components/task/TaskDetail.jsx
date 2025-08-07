@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../../styles/task/taskdetail.css";
 import { useNavigate } from 'react-router-dom';
 import { getProjectById } from "../../services/projectService";
-import { getTaskById, updateTask,requestCompleteTask,getAllTasks } from "../../services/taskService";
+import { getTaskById, updateTask,requestCompleteTask,getAllTasks,confirmCompleteTask } from "../../services/taskService";
 import { getUserById } from "../../services/userService"; 
 import { getComment, createComment, updateComment, deleteComment} from "../../services/commentService"; 
 import { useParams } from 'react-router-dom';
@@ -146,6 +146,15 @@ const TaskDetail = () => {
 
       console.log("Dữ liệu gửi lên:", updatedTask); // Kiểm tra dữ liệu trước khi gửi
       await updateTask(task._id, updatedTask);
+      // Cập nhật task trong localStorage
+      const storedTasks = localStorage.getItem("alltasks");
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const updatedTasks = tasks.map((t) =>
+        t._id === task._id ? { ...t, ...updatedTask } : t
+      );
+
+      localStorage.setItem("alltasks", JSON.stringify(updatedTasks)); // Cập nhật localStorage
+      setTask({ ...task, ...updatedTask }); // Cập nhật state task
       alert("Cập nhật thành công!");
       setIsModalOpen(false);
     } catch (error) {
@@ -168,7 +177,7 @@ const TaskDetail = () => {
     setIsConfirmModalOpen(true);
   };
 
-const confirmCompleteTask = async () => {
+const requestTask = async () => {
   try {
     await requestCompleteTask(task._id);
     alert("Công việc đã được gửi yêu cầu hoàn thành!");
@@ -176,6 +185,26 @@ const confirmCompleteTask = async () => {
   } catch (error) {
     console.error("Lỗi khi gửi yêu cầu hoàn thành:", error);
     alert("Không thể gửi yêu cầu hoàn thành. Vui lòng thử lại!");
+  } finally {
+    setIsConfirmModalOpen(false);
+  }
+};
+
+const confirmTask = async (confirm) => {
+  try {
+    await confirmCompleteTask(task._id, { confirm: confirm });
+    alert(
+      confirm
+        ? "Công việc đã được xác nhận hoàn thành!"
+        : "Yêu cầu hoàn thành đã bị hủy!"
+    );
+    setTask({
+      ...task,
+      status: confirm ? "Done" : "To Do", // hoặc trạng thái phù hợp
+    });
+  } catch (error) {
+    console.error("Lỗi khi gửi xác nhận:", error);
+    alert("Không thể gửi xác nhận. Vui lòng thử lại!");
   } finally {
     setIsConfirmModalOpen(false);
   }
@@ -217,15 +246,37 @@ const handleSuggestionClick = (task) => {
               <div className="task-project">{project?.name}</div>
             </div>
             <div className="task-actions">
-              {currentUser?.id === task?.created_by && (
-                <button className="action-btn" onClick={() => setIsModalOpen(true)}>
-                  ✏️ Chỉnh sửa
-                </button>
+              {currentUser?._id === project?.owner_id?._id && (
+                <>
+                  <button className="action-btn" onClick={() => setIsModalOpen(true)}>
+                    ✏️ Chỉnh sửa
+                  </button>
+                  {task?.status === "In Review" && (
+                    <>
+                      <button className="action-btn" onClick={() => confirmTask(true)}>
+                        ✅ Xác nhận hoàn thành
+                      </button>
+                      <button className="action-btn" onClick={() => confirmTask(false)}>
+                        ❌ Hủy yêu cầu
+                      </button>
+                    </>
+                  )}
+                </>
               )}
-              {currentUser?.id === task?.assigned_to_id && (
-                <button className="action-btn primary" onClick={handleCompleteTask}>
-                  ✅ Hoàn thành
-                </button>
+              {currentUser?._id === task?.assigned_to_id && (
+                <>
+                  {task?.status !== "In Review" && (
+                    <button className="action-btn primary" onClick={handleCompleteTask}>
+                      ✅ Hoàn thành
+                    </button>
+                  )}
+                  {task?.status === "In Review" && (
+                    <button className="action-btn" >
+                      ⏳ Chờ xác nhận
+                    </button>
+                  )}
+                </>
+                
               )}
             </div>
           </div>
@@ -602,7 +653,7 @@ const handleSuggestionClick = (task) => {
               </button>
               <button
                 className="confirm-modal-btn confirm"
-                onClick={confirmCompleteTask}
+                onClick={requestTask}
               >
                 Xác nhận
               </button>

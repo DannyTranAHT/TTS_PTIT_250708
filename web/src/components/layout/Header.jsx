@@ -31,12 +31,14 @@ const Header = () => {
   const markAllAsReadHandler = useCallback(async () => {
     try {
       await markAllAsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true }))
-      );
+      setNotifications((prev) => {
+        const updatedNotifications = prev.map((n) => ({ ...n, is_read: true }));
+        localStorage.setItem("notifications", JSON.stringify(updatedNotifications)); // Cập nhật localStorage
+        return updatedNotifications;
+      });
       setUnreadCount(0);
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error("Error marking all as read:", error);
     }
   }, []);
 
@@ -44,14 +46,16 @@ const Header = () => {
     async (id) => {
       try {
         await markAsRead(id, { is_read: true });
-        setNotifications((prev) =>
-          prev.map((n) =>
+        setNotifications((prev) => {
+          const updatedNotifications = prev.map((n) =>
             n._id === id ? { ...n, is_read: true } : n
-          )
-        );
+          );
+          localStorage.setItem("notifications", JSON.stringify(updatedNotifications)); // Cập nhật localStorage
+          return updatedNotifications;
+        });
         setUnreadCount((prev) => Math.max(prev - 1, 0));
       } catch (error) {
-        console.error('Error marking notification as read:', error);
+        console.error("Error marking notification as read:", error);
       }
     },
     []
@@ -64,12 +68,26 @@ const Header = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
+        // Kiểm tra nếu đã có thông báo trong localStorage
+        const storedNotifications = localStorage.getItem("notifications");
+        if (storedNotifications) {
+          const parsedNotifications = JSON.parse(storedNotifications);
+          setNotifications(parsedNotifications); // Sử dụng dữ liệu từ localStorage
+          const unread = parsedNotifications.filter((n) => !n.is_read).length;
+          setUnreadCount(unread); // Cập nhật số lượng thông báo chưa đọc
+          return;
+        }
+
+        // Nếu chưa có, gọi API để lấy thông báo
         const res = await getNotifications();
         setNotifications(res.notifications || []);
         const unread = res.notifications?.filter((n) => !n.is_read).length || 0;
         setUnreadCount(unread);
+
+        // Lưu thông báo vào localStorage
+        localStorage.setItem("notifications", JSON.stringify(res.notifications || []));
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error("Error fetching notifications:", error);
       }
     };
 
@@ -142,7 +160,11 @@ const Header = () => {
                 onClick={() => navigate('/profile')}
                 style={{ cursor: 'pointer' }}
               >
-                Chào mừng, <strong>{user.full_name}</strong>
+                {user.role === 'Admin' ? (
+                  <>Chào mừng Admin, <strong>{user.full_name}</strong></>
+                ) : (
+                  <>Chào mừng, <strong>{user.full_name}</strong></>
+                )}
               </span>
               <div className="user-avatar">
                 {user.full_name?.charAt(0) || 'U'}

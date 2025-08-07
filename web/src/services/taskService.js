@@ -53,15 +53,15 @@ export const unassignMemberFromTask = (id, memberId) =>
     .then((res) => res.data);
 export const requestCompleteTask = (id) =>
   axios
-    .post(`${API_BASE}/${id}/request-complete`, {}, {
+    .post(`${API_BASE}/${id}/request-complete`, {
       headers: {
         Authorization: localStorage.getItem('token'),
       },
     })
     .then((res) => res.data);
-export const confirmCompleteTask = (id) =>
+export const confirmCompleteTask = (id, confirm) =>
   axios
-    .post(`${API_BASE}/${id}/confirm-complete`, {}, {
+    .post(`${API_BASE}/${id}/confirm-complete`, { confirm }, {
       headers: {
         Authorization: localStorage.getItem('token'),
       },

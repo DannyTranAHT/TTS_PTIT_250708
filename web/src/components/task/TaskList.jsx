@@ -18,6 +18,7 @@ const MyTasks = () => {
     sort: 'newest',
     search: ''
   });
+  const navigate = useNavigate();
 
   const tasksPerPage = 6;
 
@@ -197,7 +198,7 @@ const getPriorityText = (priority) => ({
 
       <div className="tasks-grid">
         {paginatedTasks.length > 0 ? paginatedTasks.map(task => (
-          <div key={task._id} className="task-card" onClick={() => alert(`Mở chi tiết task #${task.id}`)}>
+          <div key={task._id} className="task-card" onClick={() => navigate(`/tasks/${task._id}`)}>
             <div className="task-header">
               <div>
                 <h3 className="task-title">{task.name}</h3>

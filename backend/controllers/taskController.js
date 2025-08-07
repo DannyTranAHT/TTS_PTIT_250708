@@ -41,8 +41,8 @@ const createTask = async (req, res) => {
       await createNotification({
         user_id: task.assigned_to_id,
         type: 'task_assigned',
-        title: 'New Task Assigned',
-        message: `You have been assigned a new task: ${task.name}`,
+        title: 'Giao việc mới',
+        message: `Bạn vừa được giao công việc mới: ${task.name}`,
         related_entity: {
           entity_type: 'Task',
           entity_id: task._id
@@ -51,7 +51,7 @@ const createTask = async (req, res) => {
       const io = req.app.get('io');
       io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
         task: populatedTask,
-        message: `New task assigned: ${task.name}`
+        message: `Bạn vừa được giao công việc mới: ${task.name}`
       });
     }
     res.status(201).json({ message: 'Task created successfully', task });
@@ -246,8 +246,8 @@ const updateTask = async (req, res) => {
       await createNotification({
         user_id: task.assigned_to_id,
         type: 'task_assigned',
-        title: 'New Task Assigned',
-        message: `You have been assigned a new task: ${task.name}`,
+        title: 'Giao việc mới',
+        message: `Bạn vừa được giao công việc mới: ${task.name}`,
         related_entity: {
           entity_type: 'Task',
           entity_id: task._id
@@ -256,7 +256,7 @@ const updateTask = async (req, res) => {
       const io = req.app.get('io');
       io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
         task: populatedTask,
-        message: `New task assigned: ${task.name}`
+        message: `Bạn vừa được giao công việc mới: ${task.name}`
       });
     }
  
@@ -272,6 +272,10 @@ const requestCompleteTask = async (req, res) => {
   try {
     const { id } = req.params;
     const task = await Task.findById(id);
+    const project = await Project.findById(task.project_id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -284,10 +288,10 @@ const requestCompleteTask = async (req, res) => {
     await task.save();
     const project = await Project.findById(task.project_id);
     await createNotification({
-      user_id: project.owner_id,
+      user_id: project.owner_id._id, // Gửi thông báo cho người tạo project
       type: 'task_updated',
-      title: 'Task Completion Requested',
-      message: `Task ${task.name} has been requested for completion by ${req.user.username}`,
+      title: 'Yêu cầu xác nhận hoàn thành',
+      message: `Công việc ${task.name} vừa được gửi yêu cầu hoàn thành bởi ${req.user.full_name}`,
       related_entity: {
         entity_type: 'Task',
         entity_id: task._id
@@ -309,12 +313,16 @@ const confirmCompleteTask = async (req, res) => {
     const { id } = req.params;
     const { confirm } = req.body; // true: hoàn thành, false: không hoàn thành
     const task = await Task.findById(id);
+    const project = await Project.findById(task.project_id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
     const project = await Project.findById(task.project_id);
     // Chỉ creator mới xác nhận
-    if (!project.owner_id || project.owner_id.toString() !== req.user._id.toString()) {
+    if (!project.owner_id._id || project.owner_id._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only creator can confirm completion' });
     }
     if (task.status !== 'In Review') {
@@ -325,8 +333,8 @@ const confirmCompleteTask = async (req, res) => {
       await createNotification({
         user_id: task.assigned_to_id,
         type: 'task_updated',
-        title: 'Task Completed',
-        message: `Task ${task.name} has been confirmed as completed by ${req.user.username}`,
+        title: 'Đã xác nhận hoàn thành',
+        message: `Công việc ${task.name} đã được xác nhận hoàn thành bởi ${req.user.full_name}`,
         related_entity: {
           entity_type: 'Task',
           entity_id: task._id
@@ -337,8 +345,8 @@ const confirmCompleteTask = async (req, res) => {
       await createNotification({
         user_id: task.assigned_to_id,
         type: 'task_updated',
-        title: 'Task Not Completed',
-        message: `Task ${task.name} has been marked as not completed by ${req.user.username}`,
+        title: 'Không xác nhận hoàn thành',
+        message: `Công việc ${task.name} đã bị từ chối xác nhận hoàn thành bởi ${req.user.full_name}`,
         related_entity: {
           entity_type: 'Task',
           entity_id: task._id

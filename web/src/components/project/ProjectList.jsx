@@ -4,6 +4,7 @@ import '../../styles/project/ProjectList.css';
 import { getAllProjects } from '../../services/projectService';
 
 const ProjectList = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
   const [projects, setProjects] = useState([]);
   const [filters, setFilters] = useState({
     status: '',
@@ -123,7 +124,10 @@ const ProjectList = () => {
         <div className="empty-state">
           <h3>Không tìm thấy dự án nào</h3>
           <p>Thử thay đổi bộ lọc hoặc tạo dự án mới</p>
-          <button className="create-btn" onClick={() => navigate('/projects/create')}>➕ Tạo dự án mới</button>
+          {/* Chỉ hiển thị nút tạo dự án mới nếu người dùng có quyền */}
+          {user && (user.role === 'Admin' || user.role === 'Project Manager') && (
+            <button className="create-btn" onClick={() => navigate('/projects/create')}>➕ Tạo dự án mới</button>
+          )}
         </div>
       );
     }
@@ -164,7 +168,10 @@ const ProjectList = () => {
         </div>
         <div className="project-date">Hạn: {formatDate(project.dueDate)}</div>
         <div className="project-actions">
-          <button className="action-btn" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}/edit`); }}>✏️ Chỉnh sửa</button>
+          {/* Chỉ hiển thị nút chỉnh sửa và xem tasks nếu người dùng có quyền */}
+          {user && (user.role === 'Admin' || user.role === 'Project Manager') && (
+            <button className="action-btn" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}/edit`); }}>✏️ Chỉnh sửa</button>
+          )}
           <button className="action-btn" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}/tasks`); }}>📋 Xem tasks</button>
         </div>
       </div>
@@ -175,7 +182,10 @@ const ProjectList = () => {
     <div className="main-content-project-list">
       <div className="page-header">
         <h1 className="page-title">Danh sách Dự án</h1>
-        <button className="create-btn" onClick={() => navigate('/projects/create')}>➕ Tạo dự án mới</button>
+        {/* Chỉ hiển thị nút tạo dự án mới nếu người dùng có quyền */}
+        {user && (user.role === 'Admin' || user.role === 'Project Manager') &&
+          <button className="create-btn" onClick={() => navigate('/projects/create')}>➕ Tạo dự án mới</button>
+        }
       </div>
 
       <div className="filters-bar">

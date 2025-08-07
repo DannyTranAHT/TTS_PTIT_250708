@@ -5,66 +5,58 @@ import { useNavigate } from 'react-router-dom';
 const ProfilePage = () => {
   const navigate = useNavigate();
 
-  const handleEditClick = (e) => {
-    const btn = e.target;
-    const originalText = btn.textContent;
-    btn.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
-    btn.textContent = 'Đang xử lý...';
-    setTimeout(() => {
-      btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-      btn.textContent = originalText;
-    }, 1500);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('projects');
+    localStorage.removeItem('alltasks');
+    localStorage.removeItem('notifications');
+    navigate('/login');
   };
 
   return (
-    <div>
+    <div className="profile-page">
       <main className="main-content">
+        {/* Phần thông tin cá nhân */}
         <div className="profile-section">
           <div className="profile-content">
             <div className="profile-avatar">NA</div>
             <div className="profile-info">
               <h1 className="profile-name">Nguyễn Văn A</h1>
               <p className="profile-email">nguyenvana@example.com</p>
+              <p className="profile-role">Project Manager</p>
             </div>
           </div>
         </div>
 
+        {/* Thông tin chi tiết */}
         <div className="info-grid">
           <div className="info-card">
             <h2 className="info-title">Thông tin cá nhân</h2>
             <div className="info-item">
-              <span className="info-label">Số điện thoại</span>
-              <span className="info-value">+84 123 456 789</span>
+              <span className="info-label">Họ và tên</span>
+              <span className="info-value">Nguyễn Văn A</span>
             </div>
             <div className="info-item">
-              <span className="info-label">Địa chỉ</span>
-              <span className="info-value">Hà Nội, Việt Nam</span>
+              <span className="info-label">Email</span>
+              <span className="info-value">nguyenvana@example.com</span>
             </div>
             <div className="info-item">
-              <span className="info-label">Ngày tham gia</span>
-              <span className="info-value">01/01/2024</span>
-            </div>
-            <button className="edit-btn" onClick={() => navigate('/editprofile')}>Chỉnh sửa thông tin</button>
-          </div>
-
-          <div className="info-card">
-            <h2 className="info-title">Cài đặt tài khoản</h2>
-            <div className="info-item">
-              <span className="info-label">Ngôn ngữ</span>
-              <span className="info-value">Tiếng Việt</span>
+              <span className="info-label">Vai trò</span>
+              <span className="info-value">Project Manager</span>
             </div>
             <div className="info-item">
-              <span className="info-label">Múi giờ</span>
-              <span className="info-value">GMT+7</span>
+              <span className="info-label">Chuyên ngành</span>
+              <span className="info-value">Công nghệ thông tin</span>
             </div>
-            <div className="info-item">
-              <span className="info-label">Thông báo</span>
-              <span className="info-value">Bật</span>
-            </div>
-            <button className="edit-btn" onClick={handleEditClick}>Cài đặt thông báo</button>
+            <button className="edit-btn" onClick={() => navigate('/editprofile')}>
+              ✏️ Chỉnh sửa thông tin
+            </button>
           </div>
         </div>
 
+        {/* Hoạt động gần đây */}
         <div className="activity-section">
           <h2 className="activity-title">Hoạt động gần đây</h2>
           <div className="activity-list">
@@ -90,6 +82,13 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Nút đăng xuất */}
+        <div className="logout-section">
+          <button className="logout-btn" onClick={handleLogout}>
+            🔒 Đăng xuất
+          </button>
         </div>
       </main>
     </div>

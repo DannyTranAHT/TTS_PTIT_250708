@@ -59,7 +59,15 @@ const CreateProject = () => {
 
     try {
     const response = await createProject(newProject); // Gửi dữ liệu đến API
-    console.log('New Project:', response.data);
+    // Lấy danh sách projects từ localStorage
+    const storedProjects = localStorage.getItem("projects");
+    const projects = storedProjects ? JSON.parse(storedProjects) : [];
+
+    // Thêm dự án mới vào danh sách
+    const updatedProjects = [...projects, response.data.project];
+
+    // Lưu danh sách cập nhật vào localStorage
+    localStorage.setItem("projects", JSON.stringify(updatedProjects));
     alert('Dự án đã được tạo thành công!');
     window.location.href = '/projects'; // Chuyển hướng đến trang danh sách dự án
   } catch (error) {
