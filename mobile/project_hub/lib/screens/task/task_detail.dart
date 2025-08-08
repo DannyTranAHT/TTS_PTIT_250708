@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
+import 'package:project_hub/config/status_config.dart';
 import 'package:project_hub/models/comment_model.dart';
+import 'package:project_hub/models/project_model.dart';
+import 'package:project_hub/models/task_model.dart';
+import 'package:project_hub/providers/project_provider.dart';
+import 'package:project_hub/providers/task_provider.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
+import 'package:project_hub/services/storage_service.dart';
+import 'package:provider/provider.dart';
 
 class TaskDetailScreen extends StatefulWidget {
+  final Task task;
+  final bool isManager;
+  const TaskDetailScreen({
+    super.key,
+    required this.task,
+    this.isManager = false,
+  });
   @override
   _TaskDetailScreenState createState() => _TaskDetailScreenState();
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
+  String? token;
+  String? refreshToken;
   final TextEditingController _commentController = TextEditingController();
-
-  List<ChecklistItem> checklistItems = [
-    ChecklistItem(
-      title: 'Phân tích requirements và wireframe',
-      isCompleted: true,
-    ),
-    ChecklistItem(title: 'Thiết kế mockup cho Light mode', isCompleted: true),
-    ChecklistItem(title: 'Thiết kế mockup cho Dark mode', isCompleted: false),
-    ChecklistItem(title: 'Tạo prototype tương tác', isCompleted: false),
-    ChecklistItem(title: 'Review với team và stakeholders', isCompleted: false),
-    ChecklistItem(title: 'Handoff cho developers', isCompleted: false),
-  ];
-
-  List<FileItem> attachments = [
-    FileItem(name: 'Dashboard_Mockup_v1.fig', size: '2.5 MB'),
-    FileItem(name: 'Design_System_Guide.pdf', size: '1.2 MB'),
-    FileItem(name: 'User_Flow_Diagram.jpg', size: '850 KB'),
-  ];
 
   List<Comment> comments = [
     Comment(
@@ -49,6 +48,175 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       avatar: 'NA',
     ),
   ];
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      final loadedToken = await StorageService.getToken();
+      final loadedRefreshToken = await StorageService.getRefreshToken();
+
+      setState(() {
+        token = loadedToken;
+        refreshToken = loadedRefreshToken;
+      });
+
+      if (token != null && mounted) {
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        await taskProvider.fetchTaskById(
+          token: token!,
+          taskId: widget.task.id!,
+        );
+      }
+    } catch (e) {
+      print('Error initializing: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> _assignedToMember(String memberId) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    try {
+      await taskProvider
+          .assignTaskToMember(
+            token: token!,
+            taskId: widget.task.id!,
+            memberId: memberId,
+          )
+          .then((success) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Giao công việc thành công'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pop(context);
+              Navigator.pop(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Giao công việc thất bại'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi khi giao công việc: $e')));
+    }
+  }
+
+  Future<void> unAssignedToMember(String memberId) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    try {
+      await taskProvider
+          .unAssignTaskToMember(
+            token: token!,
+            taskId: widget.task.id!,
+            memberId: memberId,
+          )
+          .then((success) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hủy giao công việc thành công'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pop(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Hủy giao công việc thất bại'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi khi hủy giao công việc: $e')));
+    }
+  }
+
+  Future<void> requestCompleted() async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    try {
+      await taskProvider
+          .requestTaskCompleted(token: token!, taskId: widget.task.id!)
+          .then((success) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Yêu cầu hoàn thành công việc đã được gửi'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pop(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Yêu cầu hoàn thành công việc thất bại'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi gửi yêu cầu hoàn thành công việc: $e')),
+      );
+    }
+  }
+
+  Future<void> comfirmCompleted(bool confirm) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    try {
+      await taskProvider
+          .confirmTaskCompleted(
+            token: token!,
+            taskId: widget.task.id!,
+            confirm: confirm,
+          )
+          .then((success) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    confirm
+                        ? 'Công việc đã được xác nhận hoàn thành'
+                        : 'Công việc đã được xác nhận chưa hoàn thành',
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pop(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Xác nhận công việc thất bại'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi khi xác nhận công việc: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,131 +235,94 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               // Header
               TopBar(isBack: true),
-
-              // Project Info
-              Container(
-                padding: EdgeInsets.all(16.r),
-                decoration: BoxDecoration(color: Colors.white),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50.w,
-                      height: 50.h,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF6C63FF),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 2.r,
-                          ),
-                        ),
-                      ),
-                      child: Icon(Icons.web, color: Colors.white, size: 20.sp),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mobile App Development',
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2D2D2D),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            height: 28.h,
-                            width: 136.w,
-                            padding: EdgeInsets.only(top: 4.h),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: Text(
-                              'ĐANG THỰC HIỆN',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // Content
               Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(16.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      top: BorderSide(color: Colors.grey[300]!, width: 2.r),
-                    ),
-                  ),
+                child: Consumer<TaskProvider>(
+                  builder: (context, taskProvider, child) {
+                    if (taskProvider.isLoading) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (taskProvider.errorMessage != null) {
+                      return Center(
+                        child: Text(
+                          'Lỗi: ${taskProvider.errorMessage}',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    Task? task = taskProvider.selectedTask;
+                    if (task == null) {
+                      return Center(
+                        child: Text(
+                          'Không tìm thấy thông tin công việc.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    }
+                    return Container(
+                      padding: EdgeInsets.all(16.r),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                          top: BorderSide(color: Colors.grey[300]!, width: 2.r),
+                        ),
+                      ),
 
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Task Header
-                        Row(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                'Thiết kế UI',
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2D2D2D),
-                                  overflow: TextOverflow.ellipsis,
+                            // Task Header
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    task.name,
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2D2D2D),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                task.status == 'Done'
+                                    ? Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 30.sp,
+                                    )
+                                    : SizedBox.shrink(),
+                              ],
                             ),
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 30.sp,
-                            ),
+
+                            SizedBox(height: 16.h),
+
+                            // Task Info
+                            _buildTaskInfoSection(task),
+
+                            SizedBox(height: 20.h),
+
+                            // Description
+                            _buildDescriptionSection(task),
+
+                            SizedBox(height: 20.h),
+
+                            // Attachments
+                            _buildAttachmentsSection(task),
+
+                            SizedBox(height: 20.h),
+                            // Confirm Button
+                            _buildComfirm(task),
+                            SizedBox(height: 20.h),
+
+                            // Comments
+                            _buildCommentsSection(task),
                           ],
                         ),
-
-                        SizedBox(height: 16.h),
-
-                        // Task Info
-                        _buildTaskInfoSection(),
-
-                        SizedBox(height: 20.h),
-
-                        // Description
-                        _buildDescriptionSection(),
-
-                        SizedBox(height: 20.h),
-
-                        // Checklist
-                        _buildChecklistSection(),
-
-                        SizedBox(height: 20.h),
-
-                        // Attachments
-                        _buildAttachmentsSection(),
-
-                        SizedBox(height: 20.h),
-
-                        // Comments
-                        _buildCommentsSection(),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -201,7 +332,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildTaskInfoSection() {
+  Widget _buildTaskInfoSection(Task task) {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
@@ -226,10 +357,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'ĐANG THỰC HIỆN',
+                      StatusConfig.changTaskStatus(task.status),
                       style: TextStyle(
                         fontSize: 14.sp,
-                        color: Colors.blue,
+                        color: StatusConfig.taskStatusColor(task.status),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -250,7 +381,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'CAO',
+                      task.priority.toUpperCase(),
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Colors.red,
@@ -279,7 +410,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '16/10/2023',
+                      task.dueDate != null
+                          ? DateFormat('dd/MM/yyyy').format(task.dueDate!)
+                          : 'Không có hạn',
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Color(0xFF2D2D2D),
@@ -303,7 +436,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      '01/10/2023',
+                      task.createdAt != null
+                          ? DateFormat('dd/MM/yyyy').format(task.createdAt!)
+                          : 'Không có ngày bắt đầu',
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Color(0xFF2D2D2D),
@@ -316,37 +451,93 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ],
           ),
           SizedBox(height: 16.h),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16.r,
-                backgroundColor: Color(0xFF6C63FF),
-                child: Text(
-                  'NA',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
+          task.assignedTo != null
+              ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16.r,
+                        backgroundColor: Color(0xFF6C63FF),
+                        child: Text(
+                          task.assignedTo!.fullName
+                              .substring(0, 1)
+                              .toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        task.assignedTo!.fullName,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Color(0xFF2D2D2D),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  widget.isManager
+                      ? IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder:
+                                (context) =>
+                                    _buildRemoveMember(task.assignedTo!.id),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.remove_circle_outline,
+                          color: Color.fromARGB(255, 255, 6, 6),
+                          size: 26.sp,
+                        ),
+                      )
+                      : SizedBox.shrink(),
+                ],
+              )
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Chưa có người được giao',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  widget.isManager
+                      ? IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => _buildAddMember(),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.add_circle_outline,
+                          color: Color(0xFF6C63FF),
+                          size: 26.sp,
+                        ),
+                      )
+                      : SizedBox.shrink(),
+                ],
               ),
-              SizedBox(width: 8.w),
-              Text(
-                'Nguyễn Văn A',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Color(0xFF2D2D2D),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildDescriptionSection() {
+  Widget _buildDescriptionSection(Task task) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -360,7 +551,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ),
         SizedBox(height: 8.h),
         Text(
-          'Thiết kế giao diện dashboard cho ứng dụng mobile với các tính năng:\n\n• Tổng quan doanh số và metrics quan trọng\n• Biểu đồ thống kê tương tác\n• Responsive design cho nhiều kích thước màn hình\n• Dark mode support\n• Animation và micro-interactions',
+          task.description.isNotEmpty ? task.description : 'Không có mô tả',
           style: TextStyle(
             fontSize: 14.sp,
             color: Colors.grey[700],
@@ -371,62 +562,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildChecklistSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Checklist',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2D2D2D),
-          ),
-        ),
-        SizedBox(height: 12.h),
-        ...checklistItems.map((item) => _buildChecklistItem(item)),
-      ],
-    );
-  }
-
-  Widget _buildChecklistItem(ChecklistItem item) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      child: Row(
-        children: [
-          Container(
-            width: 20.w,
-            height: 20.h,
-            decoration: BoxDecoration(
-              color: item.isCompleted ? Color(0xFF6C63FF) : Colors.transparent,
-              border: Border.all(
-                color: item.isCompleted ? Color(0xFF6C63FF) : Colors.grey[400]!,
-              ),
-              borderRadius: BorderRadius.circular(4.r),
-            ),
-            child:
-                item.isCompleted
-                    ? Icon(Icons.check, color: Colors.white, size: 14.sp)
-                    : null,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              item.title,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: item.isCompleted ? Colors.grey[600] : Color(0xFF2D2D2D),
-                decoration:
-                    item.isCompleted ? TextDecoration.lineThrough : null,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAttachmentsSection() {
+  Widget _buildAttachmentsSection(Task task) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -439,49 +575,229 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
         ),
         SizedBox(height: 12.h),
-        ...attachments.map((file) => _buildAttachmentItem(file)),
+        // Mockup files
+        (task.attachments != null && task.attachments != "")
+            ? Row(
+              children: [
+                Icon(Icons.attach_file, color: Color(0xFF6C63FF), size: 24.sp),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    'dashboard_design_v1.png',
+                    style: TextStyle(fontSize: 14.sp, color: Color(0xFF2D2D2D)),
+                  ),
+                ),
+              ],
+            )
+            : Text(
+              'Không có tệp đính kèm',
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+            ),
       ],
     );
   }
 
-  Widget _buildAttachmentItem(FileItem file) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.all(12.r),
-      decoration: BoxDecoration(
-        color: Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Color(0xFFE9ECEF)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.attach_file, color: Colors.grey[600], size: 20.sp),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  file.name,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Color(0xFF2D2D2D),
-                    fontWeight: FontWeight.w500,
+  Widget _buildComfirm(Task task) {
+    return (widget.isManager && task.status != "In Review")
+        ? SizedBox.shrink()
+        : (widget.isManager && task.status == "In Review")
+        ? Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        title: Text(
+                          'Xác nhận chưa hoàn thành công việc',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2D2D),
+                          ),
+                        ),
+                        content: Text(
+                          'Bạn có chắc chắn muốn xác nhận công việc này chưa hoàn thành?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Hủy'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              comfirmCompleted(false);
+                            },
+                            child: Text('Xác nhận'),
+                          ),
+                        ],
+                      ),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.all(16.r),
+                height: 60.h,
+                width: 160.w,
+                decoration: BoxDecoration(
+                  color: Color(0xFF6C63FF),
+                  borderRadius: BorderRadius.circular(50.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 4.r,
+                      offset: Offset(0, 2.r),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    'Blocked',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                Text(
-                  file.size,
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+              ),
+            ),
+            InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        title: Text(
+                          'Xác nhận hoàn thành công việc',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2D2D),
+                          ),
+                        ),
+                        content: Text(
+                          'Bạn có chắc chắn muốn xác nhận công việc này đã hoàn thành?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Hủy'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              comfirmCompleted(true);
+                            },
+                            child: Text('Xác nhận'),
+                          ),
+                        ],
+                      ),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.all(16.r),
+                height: 60.h,
+                width: 160.w,
+                decoration: BoxDecoration(
+                  color: Color(0xFF6C63FF),
+                  borderRadius: BorderRadius.circular(50.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 4.r,
+                      offset: Offset(0, 2.r),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    'Xác nhận',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        )
+        : InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text(
+                      'Hoàn thành công việc',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D2D2D),
+                      ),
+                    ),
+                    content: Text(
+                      'Bạn có chắc chắn đã hoàn thành công việc này?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          if (task.status == "In Review") {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Công việc đang trong trạng thái xem xét.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          requestCompleted();
+                        },
+                        child: Text('Xác nhận'),
+                      ),
+                    ],
+                  ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(16.r),
+            height: 60.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Color(0xFF6C63FF),
+              borderRadius: BorderRadius.circular(8.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 4.r,
+                  offset: Offset(0, 2.r),
                 ),
               ],
             ),
+            child: Center(
+              child: Text(
+                'Hoàn thành công việc',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
-    );
+        );
   }
 
-  Widget _buildCommentsSection() {
+  Widget _buildCommentsSection(Task task) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -519,15 +835,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   style: TextStyle(fontSize: 14.sp),
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  // Add comment logic
-                },
-                child: Text(
-                  'Hủy',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
-                ),
-              ),
+
               SizedBox(width: 8.w),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -536,7 +844,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: Text(
-                  'Gửi bình luận',
+                  'Gửi',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12.sp,
@@ -603,18 +911,120 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ),
     );
   }
-}
 
-class ChecklistItem {
-  final String title;
-  final bool isCompleted;
+  Widget _buildAddMember() {
+    Project? project = Provider.of<ProjectProvider>(context).selectedProject;
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+      child: Container(
+        padding: EdgeInsets.all(16.r),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Chọn thành viên thực hiện',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.h),
+            if (project != null && project.members!.isNotEmpty)
+              Column(
+                children:
+                    project.members!.map((member) {
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 8.h),
+                        height: 56.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 4.r,
+                              offset: Offset(0, 2.r),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            radius: 16.r,
+                            backgroundColor: Color(0xFF6C63FF),
+                            child: Text(
+                              member.fullName.substring(0, 1).toUpperCase(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(member.fullName),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(
+                                    'Xác nhận giao công việc',
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2D2D2D),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  content: Text(
+                                    'Bạn có chắc chắn muốn giao công việc này cho ${member.fullName}?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        _assignedToMember(member.id!);
+                                      },
+                                      child: Text('Xác nhận'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    }).toList(),
+              )
+            else
+              Text('Không có thành viên nào trong dự án này'),
+          ],
+        ),
+      ),
+    );
+  }
 
-  ChecklistItem({required this.title, required this.isCompleted});
-}
-
-class FileItem {
-  final String name;
-  final String size;
-
-  FileItem({required this.name, required this.size});
+  Widget _buildRemoveMember(String memberId) {
+    return AlertDialog(
+      title: Text(
+        'Xác nhận hủy giao công việc',
+        style: TextStyle(
+          fontSize: 18.sp,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF2D2D2D),
+        ),
+      ),
+      content: Text(
+        'Bạn có chắc chắn muốn hủy giao công việc này cho người dùng này?',
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Hủy')),
+        TextButton(
+          onPressed: () {
+            unAssignedToMember(memberId);
+          },
+          child: Text('Xác nhận'),
+        ),
+      ],
+    );
+  }
 }
