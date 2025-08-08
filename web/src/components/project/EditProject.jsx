@@ -46,7 +46,7 @@ const EditProject = () => {
 
     const fetchUsers = async () => {
       try {
-        const res = await getAllUsers();
+        const res = await getAllUsers({ page: 1, limit: 100 });
         setAvailableMembers(res.users);
       } catch (error) {
         console.error('Lỗi khi lấy danh sách người dùng:', error);

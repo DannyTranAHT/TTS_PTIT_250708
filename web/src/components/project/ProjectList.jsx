@@ -16,7 +16,7 @@ const ProjectList = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await getAllProjects();
+        const res = await getAllProjects({page: 1, limit: 100});
         const formatted = res.projects.map(p => ({
           id: p._id,
           title: p.name,

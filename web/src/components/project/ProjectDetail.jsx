@@ -48,7 +48,7 @@ const ProjectDetail = () => {
     // Lấy danh sách người dùng
     const fetchUsers = async () => {
       try {
-        const res = await getAllUsers();
+        const res = await getAllUsers({page: 1, limit: 100});
         setAvailableMembers(res.users); // Lưu danh sách người dùng
       } catch (error) {
         console.error('Lỗi khi lấy danh sách người dùng:', error);
@@ -155,7 +155,11 @@ const ProjectDetail = () => {
               <div className="stat-label">Tiến độ</div>
             </div>
             <div className="stat-item">
-              <div className="stat-number">{parseFloat(project.budget.$numberDecimal.toString()) || 'Không xác định'}</div>
+              <div className="stat-number">
+                {project.budget?.$numberDecimal
+                  ? parseFloat(project.budget.$numberDecimal.toString())
+                  : 'Không xác định'}
+              </div>
               <div className="stat-label">Ngân sách</div>
             </div>
           </div>

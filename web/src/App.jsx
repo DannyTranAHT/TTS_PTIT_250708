@@ -20,6 +20,10 @@ import TaskListPage from './pages/TaskListPage';
 import MainLayout from './components/layout/MainLayout';
 import EditProjectPage from './pages/EditProjectPage';
 import AllUsersPage from './pages/AllUsserPage';
+import AllRolesPage from './pages/AllRolePage';
+import AllProjectsPage from './pages/AllProjectPage';
+import AllUserDetailPage from './pages/AllUserDetailPage';
+import AllProjectDetailPage from './pages/AllProjectDetailPage';
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -62,6 +66,26 @@ function AppContent() {
           <Route path="/admin/users" element={
             <AdminRoute>
               <AllUsersPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/roles" element={
+            <AdminRoute>
+              <AllRolesPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/projects" element={
+            <AdminRoute>
+              <AllProjectsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/users/:id" element={
+            <AdminRoute>
+              <AllUserDetailPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/projects/:id" element={
+            <AdminRoute>
+              <AllProjectDetailPage />
             </AdminRoute>
           } />
         </Route>

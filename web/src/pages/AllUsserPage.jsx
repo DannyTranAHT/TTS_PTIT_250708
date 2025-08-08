@@ -1,5 +1,5 @@
 import React from 'react';
-import AllUsers from '../components/AllUsers';
+import AllUsers from '../components/admin/AllUsers';
 
 export default function AllUsersPage() {
   return (

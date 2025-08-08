@@ -67,15 +67,6 @@ export default function RoleManagement() {
 
   return (
     <div className="role-page">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">🛠️ Project Hub</div>
-          <div className="user-info">
-            <span>Chào mừng, <strong>Nguyễn Văn A</strong> (Admin)</span>
-            <div className="user-avatar">NA</div>
-          </div>
-        </div>
-      </header>
 
       <main className="main-content">
         <div className="section-card">

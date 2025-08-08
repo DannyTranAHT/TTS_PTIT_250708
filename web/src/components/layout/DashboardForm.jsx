@@ -52,7 +52,7 @@ export default function Dashboard() {
           }
   
           // Nếu chưa có, gọi API để lấy projects
-          const res = await getAllProjects();
+          const res = await getAllProjects({page: 1, limit: 100});
           setProjects(res.projects);
           setTotalProjects(res.total);
           localStorage.setItem("projects", JSON.stringify(res.projects)); // Lưu vào localStorage
@@ -98,46 +98,6 @@ export default function Dashboard() {
     setTaskBlock(blockedTasks);
     setTaskDone(completedTasks);
   }, [tasks]);
-
-  // 🧠 Kiểm tra token mỗi 10s và gọi refresh nếu cần
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const token = localStorage.getItem('token');
-      const refresh = localStorage.getItem('refreshToken');
-
-      if (token) {
-        try {
-          const { exp } = jwtDecode(token);
-          const now = Math.floor(Date.now() / 1000);
-
-          if (exp - now <= 5) {
-            if (!refresh) {
-              console.log('Không có refresh token → logout');
-              logoutUser();
-              return;
-            }
-
-            try {
-              const response = await refreshToken(refresh);
-              localStorage.setItem('token', response.token);
-              if (response.refreshToken) {
-                localStorage.setItem('refreshToken', response.refreshToken);
-              }
-              console.log('🔁 Token refreshed thành công!');
-            } catch (err) {
-              console.log('❌ Refresh token không hợp lệ → logout');
-              logoutUser();
-            }
-          }
-        } catch (err) {
-          console.log('Decode lỗi → logout');
-          logoutUser();
-        }
-      }
-    }, 9000000); // 15 phút
-
-    return () => clearInterval(interval);
-  }, []);
 
   const logoutUser = () => {
     localStorage.removeItem('token');

@@ -71,7 +71,7 @@ const AdminDashboard = () => {
 
           <SectionCard
             title="Dự án cần chú ý"
-            link="/api/projects"
+            link="/admin/projects"
             items={[
               { icon: '🔧', name: 'API Integration', progress: '40%', deadline: '05/07/2025', status: 'Quá hạn' },
               { icon: '📈', name: 'Marketing Campaign', progress: '20%', deadline: '15/07/2025', status: 'Đang thực hiện' },
