@@ -1,107 +1,81 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './AllUsers.css';
-
-const sampleUsers = [
-  {
-    name: 'Trần Thị B',
-    email: 'tranb@example.com',
-    role: 'Project Manager',
-    joinedDate: '01/07/2025',
-    projects: 3,
-    status: 'active',
-  },
-  {
-    name: 'Lê Văn C',
-    email: 'levanc@example.com',
-    role: 'Employee',
-    joinedDate: '28/06/2025',
-    projects: 2,
-    status: 'inactive',
-  },
-  {
-    name: 'Nguyễn Thị D',
-    email: 'nguyend@example.com',
-    role: 'Admin',
-    joinedDate: '15/05/2025',
-    projects: 5,
-    status: 'active',
-  },
-  {
-    name: 'Phạm Văn E',
-    email: 'phame@example.com',
-    role: 'Employee',
-    joinedDate: '10/06/2025',
-    projects: 1,
-    status: 'suspended',
-  },
-  {
-    name: 'Hoàng Thị F',
-    email: 'hoangf@example.com',
-    role: 'Project Manager',
-    joinedDate: '03/07/2025',
-    projects: 4,
-    status: 'active',
-  },
-  // Thêm dữ liệu mẫu
-  {
-    name: 'Vũ Minh G',
-    email: 'vug@example.com',
-    role: 'Employee',
-    joinedDate: '05/07/2025',
-    projects: 2,
-    status: 'active',
-  },
-  {
-    name: 'Đặng Quang H',
-    email: 'dangh@example.com',
-    role: 'Admin',
-    joinedDate: '01/06/2025',
-    projects: 6,
-    status: 'suspended',
-  },
-];
+import { getAllUsers, getUserById,updateUser,deactivateUser,activateUser } from '../../services/userService';
+import { useNavigate } from 'react-router-dom';
 
 function AllUsers() {
-  const [users, setUsers] = useState(sampleUsers);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
+  const [selectedUser, setSelectedUser] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const navigate = useNavigate();
 
   const handleSort = (column) => {
     const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newOrder);
     setSortColumn(column);
+
     const sorted = [...users].sort((a, b) => {
-      const valA = a[column];
-      const valB = b[column];
-      if (typeof valA === 'number') return newOrder === 'asc' ? valA - valB : valB - valA;
-      return newOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      const valA = a[column] || ''; // Giá trị mặc định nếu undefined
+      const valB = b[column] || ''; // Giá trị mặc định nếu undefined
+
+      // Xử lý giá trị boolean
+      if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+        return newOrder === 'asc' ? valA - valB : valB - valA;
+      }
+
+      // Xử lý giá trị số
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return newOrder === 'asc' ? valA - valB : valB - valA;
+      }
+
+      // Xử lý giá trị chuỗi
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return newOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+
+      // Giá trị mặc định nếu không xác định được kiểu
+      return 0;
     });
+
     setUsers(sorted);
   };
 
   const filteredUsers = users.filter(user => {
-    const matchSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchRole = !roleFilter || user.role.toLowerCase() === roleFilter;
-    const matchStatus = !statusFilter || user.status === statusFilter;
+    const matchStatus = !statusFilter || (statusFilter === 'active' ? user.is_active : !user.is_active);
     return matchSearch && matchRole && matchStatus;
   });
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getAllUsers({ page: currentPage, limit: 10 }); // Lấy 10 người dùng mỗi trang
+      setUsers(data.users);
+      setTotalPages(data.totalPages); // Tổng số trang
+    };
+    fetchData();
+  }, [currentPage]);
 
   return (
     <div className="user-management">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">🛠️ Project Hub</div>
-          <div className="user-info">
-            <span>Chào mừng, <strong>Nguyễn Văn A</strong> (Admin)</span>
-            <div className="user-avatar">NA</div>
-          </div>
-        </div>
-      </header>
-
       <main className="main-content">
         <div className="section-card">
           <div className="section-header">
@@ -134,45 +108,57 @@ function AllUsers() {
             <table>
               <thead>
                 <tr>
-                  <th onClick={() => handleSort('name')}>Tên</th>
+                  <th onClick={() => handleSort('full_name')}>Tên</th>
                   <th onClick={() => handleSort('email')}>Email</th>
                   <th onClick={() => handleSort('role')}>Vai trò</th>
-                  <th onClick={() => handleSort('joinedDate')}>Ngày tham gia</th>
-                  <th onClick={() => handleSort('projects')}>Số dự án</th>
-                  <th onClick={() => handleSort('status')}>Trạng thái</th>
+                  <th onClick={() => handleSort('created_at')}>Ngày tham gia</th>
+                  <th onClick={() => handleSort('is_active')}>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user, index) => (
                   <tr key={index}>
-                    <td>{user.name}</td>
+                    <td>{user.full_name}</td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>
-                    <td>{user.joinedDate}</td>
-                    <td>{user.projects}</td>
+                    <td>{new Date(user.created_at).toLocaleDateString()}</td>
                     <td>
-                      <span className={`status-badge status-${user.status}`}>
-                        {
-                          user.status === 'active' ? 'Hoạt động' :
-                          user.status === 'inactive' ? 'Không hoạt động' :
-                          'Tạm ngưng'
-                        }
+                      <span className={`status-badge status-${user.is_active}`}>
+                        {user.is_active ? 'Hoạt động' : 'Không hoạt động'}
                       </span>
                     </td>
                     <td className="action-buttons">
-                      <button className="view-btn" onClick={() => alert(`Xem chi tiết: ${user.name}`)}>Xem</button>
-                      <button className="edit-btn" onClick={() => alert(`Chỉnh sửa: ${user.name}`)}>Sửa</button>
+                      <button className="view-btn" onClick={() => navigate(`/admin/users/${user._id}`)}>Xem</button>
+                      {/* <button className="edit-btn" onClick={() => alert(`Chỉnh sửa: ${user.full_name}`)}>Sửa</button>
                       <button className="delete-btn" onClick={() => {
                         if (window.confirm('Bạn có chắc muốn xóa người dùng này?')) {
                           setUsers(users.filter((_, i) => i !== index));
                         }
-                      }}>Xóa</button>
+                      }}>Xóa</button> */}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="pagination">
+            <button
+              className="pagination-btn"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+            >
+              Trang trước
+            </button>
+            <span>Trang {currentPage} / {totalPages}</span>
+            <button
+              className="pagination-btn"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              Trang sau
+            </button>
           </div>
         </div>
 

@@ -2,9 +2,9 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:5000/api/users';
 
-export const getAllUsers = () =>
+export const getAllUsers = ({ page, limit }) =>
   axios
-    .get(`${API_BASE}/`, {
+    .get(`${API_BASE}/?page=${page}&limit=${limit}`, {
       headers: {
         Authorization: localStorage.getItem('token'),
       },

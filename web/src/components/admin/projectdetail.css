@@ -1,0 +1,307 @@
+
+
+        .main-content-admin-project-detail {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Cải tiến phần thông tin dự án */
+.main-content-admin-project-detail .project-section {
+    background: linear-gradient(135deg, #f9f9f9, #ffffff);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-content-admin-project-detail .project-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.main-content-admin-project-detail .project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.main-content-admin-project-detail .project-info h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.main-content-admin-project-detail .project-info p {
+    color: #555;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.main-content-admin-project-detail .status-badge {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.main-content-admin-project-detail .status-progress {
+    background: #e3f2fd;
+    color: #2196f3;
+}
+
+.main-content-admin-project-detail .status-overdue {
+    background: #ffebee;
+    color: #f44336;
+}
+
+.main-content-admin-project-detail .status-completed {
+    background: #e8f5e8;
+    color: #4caf50;
+}
+
+.main-content-admin-project-detail .action-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.main-content-admin-project-detail .edit-btn, .main-content-admin-project-detail .archive-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.main-content-admin-project-detail .edit-btn {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.main-content-admin-project-detail .edit-btn:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.main-content-admin-project-detail .archive-btn {
+    background: #F44336;
+    color: white;
+}
+
+.main-content-admin-project-detail .archive-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.main-content-admin-project-detail .project-details {
+    margin-top: 20px;
+    line-height: 1.8;
+}
+
+.main-content-admin-project-detail .project-details p {
+    font-size: 16px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.main-content-admin-project-detail .project-details strong {
+    color: #333;
+    font-weight: 600;
+}
+
+        .main-content-admin-project-detail .section-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .main-content-admin-project-detail .section-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-content-admin-project-detail .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .main-content-admin-project-detail .table-container {
+            overflow-x: auto;
+        }
+
+        .main-content-admin-project-detail table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .main-content-admin-project-detail th, .main-content-admin-project-detail td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .main-content-admin-project-detail th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .main-content-admin-project-detail tr:hover {
+            background: #f8f9fa;
+        }
+
+        .main-content-admin-project-detail .progress-bar {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .main-content-admin-project-detail .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .main-content-admin-project-detail .activity-list {
+            padding: 0;
+            list-style: none;
+        }
+
+        .main-content-admin-project-detail .activity-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .main-content-admin-project-detail .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .main-content-admin-project-detail .activity-content {
+            flex: 1;
+        }
+
+        .main-content-admin-project-detail .activity-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .main-content-admin-project-detail .activity-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .main-content-admin-project-detail .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            z-index: 1000;
+        }
+
+        .main-content-admin-project-detail .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 500px;
+            max-width: 90%; /* Đảm bảo modal không vượt quá 90% chiều rộng màn hình */
+            max-height: 90%; /* Đảm bảo modal không vượt quá 90% chiều cao màn hình */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            overflow-y: auto; /* Thêm cuộn dọc nếu nội dung quá lớn */
+            position: relative; /* Để đảm bảo nút đóng không bị ảnh hưởng */
+        }
+
+        .main-content-admin-project-detail .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .main-content-admin-project-detail .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main-content-admin-project-detail .modal-form label {
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .main-content-admin-project-detail .modal-form input,
+        .main-content-admin-project-detail .modal-form select,
+        .main-content-admin-project-detail .modal-form textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .main-content-admin-project-detail .modal-form textarea {
+            resize: vertical; /* Cho phép người dùng thay đổi kích thước dọc */
+            min-height: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content-admin-project-detail .project-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .main-content-admin-project-detail .action-buttons {
+                flex-direction: column;
+            }
+
+            .main-content-admin-project-detail .modal-content {
+                width: 90%;
+                max-height: 80%; /* Giảm chiều cao tối đa trên màn hình nhỏ */
+                margin: 20px;
+            }
+
+            .main-content-admin-project-detail .modal-form {
+                gap: 10px;
+            }
+        }

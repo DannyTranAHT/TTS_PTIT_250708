@@ -79,7 +79,7 @@ const CreateProject = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const users = await getAllUsers();
+        const users = await getAllUsers({ page: 1, limit: 100 });
         console.log('Available Users:', users);
         setAvailableMembers(users.users);
       } catch (error) {
