@@ -286,7 +286,6 @@ const requestCompleteTask = async (req, res) => {
     // Đánh dấu trạng thái yêu cầu hoàn thành (dùng status hoặc thêm trường tạm thời)
     task.status = 'In Review';
     await task.save();
-    const project = await Project.findById(task.project_id);
     await createNotification({
       user_id: project.owner_id._id, // Gửi thông báo cho người tạo project
       type: 'task_updated',
@@ -320,7 +319,6 @@ const confirmCompleteTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    const project = await Project.findById(task.project_id);
     // Chỉ creator mới xác nhận
     if (!project.owner_id._id || project.owner_id._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only creator can confirm completion' });
