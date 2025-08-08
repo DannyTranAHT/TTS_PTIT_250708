@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/providers/notification_provider.dart';
 import 'package:project_hub/providers/task_provider.dart';
 import 'package:project_hub/screens/start/start.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => AuthProvider()),
             ChangeNotifierProvider(create: (_) => ProjectProvider()),
             ChangeNotifierProvider(create: (_) => TaskProvider()),
+            ChangeNotifierProvider(create: (_) => NotificationProvider()),
           ],
           child: MaterialApp(
             title: 'ProjectHub',

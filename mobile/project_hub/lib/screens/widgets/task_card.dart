@@ -90,7 +90,9 @@ class TaskCard extends StatelessWidget {
                           vertical: 2.h,
                         ),
                         decoration: BoxDecoration(
-                          color: StatusConfig.taskStatusColor(task.status),
+                          color: StatusConfig.taskStatusColor(
+                            task.status,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Text(

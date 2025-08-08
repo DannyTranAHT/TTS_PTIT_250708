@@ -73,12 +73,10 @@ class TaskProvider extends ChangeNotifier {
   }
 
   // Get tasks by id
-  Future<void> fetchTaskById({
+  Future<Task> fetchTaskById({
     required String token,
     required String taskId,
   }) async {
-    print('Fetching task by ID: $taskId');
-    print('Token: $token');
     _setState(TaskState.loading);
     _errorMessage = null;
     try {
@@ -86,13 +84,14 @@ class TaskProvider extends ChangeNotifier {
       if (response.isSuccess) {
         _selectedTask = response.model;
         _setState(TaskState.loaded);
-        print('Task fetched successfully: ${_selectedTask?.name}');
+        return _selectedTask!;
       } else {
         _setError(response.message);
       }
     } catch (e) {
       _setError('Failed to fetch task: $e');
     }
+    throw Exception('Failed to fetch task by ID: $taskId');
   }
 
   // Create a new task

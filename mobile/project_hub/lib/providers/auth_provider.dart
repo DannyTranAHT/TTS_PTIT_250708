@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:project_hub/providers/notification_provider.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_api_service.dart';
 import '../services/storage_service.dart';
@@ -26,7 +29,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _state == AuthState.loading;
 
   // Initialize provider (check if user is already logged in)
-  Future<void> initializeAuth() async {
+  Future<void> initializeAuth(BuildContext context) async {
     _setState(AuthState.loading);
 
     try {
@@ -43,6 +46,11 @@ class AuthProvider extends ChangeNotifier {
 
           // Connect socket
           SocketService.instance.connect(savedToken);
+      final notificationProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      await notificationProvider.initializeNotifications(_token!);
         } else {
           // Token is invalid, clear storage
           await _clearUserData();
@@ -58,6 +66,7 @@ class AuthProvider extends ChangeNotifier {
 
   // Login
   Future<bool> login({
+    required BuildContext context,
     required String username,
     required String password,
   }) async {
@@ -82,8 +91,12 @@ class AuthProvider extends ChangeNotifier {
         _setState(AuthState.authenticated);
 
         // Connect socket
-        SocketService.instance.connect(_token!);
-
+      final notificationProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      await notificationProvider.initializeNotifications(_token!);
+      await notificationProvider.initializeNotifications(_token!);
         return true;
       } else {
         _setError(response.message);

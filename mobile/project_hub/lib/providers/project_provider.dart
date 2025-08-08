@@ -94,7 +94,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   // Fetch single project
-  Future<void> fetchProject(String id, String token) async {
+  Future<Project> fetchProject(String id, String token) async {
     _setState(ProjectState.loading);
 
     try {
@@ -103,12 +103,14 @@ class ProjectProvider extends ChangeNotifier {
       if (response.isSuccess && response.model != null) {
         _selectedProject = response.model;
         _setState(ProjectState.loaded);
+        return _selectedProject!;
       } else {
         _setError(response.message);
       }
     } catch (e) {
       _setError('Failed to fetch project: $e');
     }
+    throw Exception('Failed to fetch project by ID: $id');
   }
 
   // Create project
