@@ -4,12 +4,18 @@ import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/providers/auth_provider.dart';
 import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/auth/login.dart';
+import 'package:project_hub/screens/notifications/notifications_screen.dart';
 import 'package:provider/provider.dart';
 
-class TopBar extends StatelessWidget {
+class TopBar extends StatefulWidget {
   const TopBar({super.key, this.isBack = false});
   final bool isBack;
 
+  @override
+  State<TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<TopBar> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -29,7 +35,7 @@ class TopBar extends StatelessWidget {
             ),
           ),
           child:
-              isBack
+              widget.isBack
                   ? Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -43,10 +49,20 @@ class TopBar extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                            size: 28.sp,
+                          IconButton(
+                            icon: Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 28.sp,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationsScreen(),
+                                ),
+                              );
+                            },
                           ),
                           SizedBox(width: 8.w),
                           CircleAvatar(
@@ -65,7 +81,7 @@ class TopBar extends StatelessWidget {
                               );
                             },
                             icon: Icon(
-                              Icons.logout,
+                              Icons.login,
                               color: Colors.white,
                               size: 24.sp,
                             ),
@@ -77,10 +93,20 @@ class TopBar extends StatelessWidget {
                   : Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                        size: 28.sp,
+                      IconButton(
+                        icon: Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 28.sp,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NotificationsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       Row(
                         children: [
