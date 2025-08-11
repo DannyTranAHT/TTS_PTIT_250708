@@ -90,7 +90,6 @@ const MyTasks = () => {
         try {
           const res = await getAllTasks(id);
           setTasks(res.tasks);
-          console.log('Tasks:', res.tasks);
           setPagination({
             currentPage: res.currentPage,
             totalPages: res.totalPages,

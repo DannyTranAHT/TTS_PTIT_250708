@@ -113,7 +113,7 @@ export default function Dashboard() {
         <div className="welcome-section">
           <div className="welcome-content">
             <h1 className="welcome-title">Chào mừng trở lại! 👋</h1>
-            <p className="welcome-subtitle">Bạn có 5 dự án đang hoạt động và 12 task cần hoàn thành</p>
+            <p className="welcome-subtitle">Bạn có {totalProjects} dự án đang hoạt động và {tasks.length-taskdone-taskblock} task cần hoàn thành</p>
           </div>
         </div>
 
