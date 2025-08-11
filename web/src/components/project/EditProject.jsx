@@ -36,9 +36,7 @@ const EditProject = () => {
       try {
         const res = await getProjectById(id);
         setProjectData(res.project);
-        console.log('Project data:', res.project);
         setSelectedMembers(res.project.members.map((member) => member._id));
-        console.log('Selected members:', res.project.members.map((member) => member._id));
       } catch (error) {
         console.error('Lỗi khi lấy thông tin dự án:', error);
       }

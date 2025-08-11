@@ -43,16 +43,15 @@ const TaskDetail = () => {
       setTask(taskRes.task);
 
       // Lấy thông tin dự án sử dụng project_id của task
-      const projectRes = await getProjectById(taskRes.task.project_id);
+      const projectRes = await getProjectById(taskRes.task.project_id._id);
       setProject(projectRes.project);
 
       // Lấy danh sách task trong dự án
       const tasksRes = await getAllTasks(projectRes.project._id);
       setTasks(tasksRes.tasks || []);
-      console.log('Danh sách task:', tasksRes.tasks);
 
       // Lấy thông tin người dùng sử dụng user_id của task
-      const userRes = await getUserById(taskRes.task.assigned_to_id);
+      const userRes = await getUserById(taskRes.task.assigned_to_id._id);
       setUser(userRes.user);
 
       // Lấy danh sách bình luận của task

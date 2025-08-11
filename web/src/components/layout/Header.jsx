@@ -45,6 +45,7 @@ const Header = () => {
   const handleNotificationClick = useCallback(
     async (id) => {
       try {
+        // Đánh dấu thông báo là đã đọc
         await markAsRead(id, { is_read: true });
         setNotifications((prev) => {
           const updatedNotifications = prev.map((n) =>
@@ -54,11 +55,26 @@ const Header = () => {
           return updatedNotifications;
         });
         setUnreadCount((prev) => Math.max(prev - 1, 0));
+
+        // Lấy thông báo được nhấp
+        const notification = notifications.find((n) => n._id === id);
+        if (notification && notification.related_entity) {
+          const { entity_type, entity_id } = notification.related_entity;
+
+          // Điều hướng dựa trên entity_type
+          if (entity_type === "Task") {
+            navigate(`/tasks/${entity_id}`);
+          } else if (entity_type === "Project") {
+            navigate(`/projects/${entity_id}`);
+          } else {
+            console.warn("Unknown entity_type:", entity_type);
+          }
+        }
       } catch (error) {
         console.error("Error marking notification as read:", error);
       }
     },
-    []
+    [notifications, navigate]
   );
 
   const handleLoadMore = useCallback(() => {

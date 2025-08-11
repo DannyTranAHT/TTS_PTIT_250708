@@ -804,7 +804,7 @@
 }
 
 /* Modal styles */
-.modal {
+.main-content-project-detail .modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -817,7 +817,7 @@
   z-index: 1000;
 }
 
-.modal-content {
+.main-content-project-detail .modal-content {
   background: #fff;
   padding: 20px;
   border-radius: 10px;
@@ -826,25 +826,25 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.modal-content h3 {
+.main-content-project-detail .modal-content h3 {
   margin-bottom: 20px;
   font-size: 1.5rem;
   color: #333;
 }
 
-.modal-content p {
+.main-content-project-detail .modal-content p {
   margin-bottom: 20px;
   font-size: 1rem;
   color: #666;
 }
 
-.modal-actions {
+.main-content-project-detail.modal-actions {
   display: flex;
   justify-content: space-between;
   gap: 10px;
 }
 
-.modal-actions .action-btn {
+.main-content-project-detail.modal-actions .action-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
@@ -853,20 +853,20 @@
   transition: background-color 0.3s ease;
 }
 
-.modal-actions .action-btn.primary {
+.main-content-project-detail.modal-actions .action-btn.primary {
   background-color: #007bff;
   color: #fff;
 }
 
-.modal-actions .action-btn.primary:hover {
+.main-content-project-detail.modal-actions .action-btn.primary:hover {
   background-color: #0056b3;
 }
 
-.modal-actions .action-btn {
+.main-content-project-detail.modal-actions .action-btn {
   background-color: #f0f0f0;
   color: #333;
 }
 
-.modal-actions .action-btn:hover {
+.main-content-project-detail.modal-actions .action-btn:hover {
   background-color: #e0e0e0;
 }
