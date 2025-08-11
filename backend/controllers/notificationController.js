@@ -39,8 +39,10 @@ const markAsRead = async (req, res) => {
 
     const notification = await Notification.findOne({
       _id: id,
-      user_id: req.user._id
     });
+    if(notification.user_id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access this notification' });
+    }
 
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
@@ -60,7 +62,6 @@ const markAllAsRead = async (req, res) => {
       { user_id: req.user._id, is_read: false },
       { is_read: true }
     );
-
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ message: error.message });

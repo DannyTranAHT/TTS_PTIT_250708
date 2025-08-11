@@ -16,7 +16,7 @@ router.use(auth);
 
 router.get('/', getNotifications);
 router.get('/unread-count', getUnreadCount);
-router.put('/:id/read', validate(notificationSchemas.updateRead),markAsRead);
+router.put('/:id/read',markAsRead);
 router.put('/mark-all-read', markAllAsRead);
 router.delete('/:id', deleteNotification);
 
