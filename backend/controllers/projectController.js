@@ -31,8 +31,8 @@ const getAllProjects = async (req, res) => {
     query.is_archived = false;
 
     const projects = await Project.find(query)
-      .populate('owner_id', 'username full_name email')
-      .populate('members', 'username full_name email role')
+      .populate('owner_id', 'username full_name email avatar')
+      .populate('members', 'username full_name email role avatar')
       .sort({ created_at: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -62,8 +62,8 @@ const getRecentProjects = async (req, res) => {
     const recentProjects = await Project.find(query)
       .sort({ created_at: -1 })
       .limit(3)
-      .populate('owner_id', 'username full_name email')
-      .populate('members', 'username full_name email role');
+      .populate('owner_id', 'username full_name email  avatar')
+      .populate('members', 'username full_name email role  avatar');
 
     res.json({
       projects: recentProjects
@@ -78,7 +78,7 @@ const getProjectById = async (req, res) => {
     const { id } = req.params;
     
     const project = await Project.findById(id)
-      .populate('owner_id', 'username full_name email role')
+      .populate('owner_id', 'username full_name email role  avatar')
       .populate('members', 'username full_name email role avatar');
 
     if (!project) {
@@ -110,7 +110,8 @@ const createProject = async (req, res) => {
     };
     const project = await Project.create(projectData);
     const populatedProject = await Project.findById(project._id)
-      .populate('owner_id', 'username full_name email')
+      .populate('owner_id', 'username full_name email  avatar')
+      .populate('members', 'username full_name email role avatar');
     res.status(201).json({
       message: 'Project created successfully',
       project: populatedProject
@@ -139,8 +140,8 @@ const updateProject = async (req, res) => {
       id,
       updates,
       { new: true, runValidators: true }
-    ).populate('owner_id', 'username full_name email')
-     .populate('members', 'username full_name email role');
+    ).populate('owner_id', 'username full_name email  avatar')
+     .populate('members', 'username full_name email role avatar');
 
 
     res.json({
@@ -205,8 +206,8 @@ const addMember = async (req, res) => {
     await project.save();
 
     const updatedProject = await Project.findById(id)
-      .populate('owner_id', 'username full_name email')
-      .populate('members', 'username full_name email role');
+      .populate('owner_id', 'username full_name email avatar')
+      .populate('members', 'username full_name email role avatar');
 
     // Notify the new member
     await createNotification({
@@ -273,8 +274,8 @@ const removeMember = async (req, res) => {
     project.members = project.members.filter(member => member.toString() !== user_id);
     await project.save();
     const updatedProject = await Project.findById(id)
-      .populate('owner_id', 'username full_name email')
-      .populate('members', 'username full_name email role');
+      .populate('owner_id', 'username full_name email avatar')
+      .populate('members', 'username full_name email role avatar');
     res.json({ message: 'Member removed successfully', project: updatedProject });
   } catch (error) {
     res.status(500).json({ message: error.message });

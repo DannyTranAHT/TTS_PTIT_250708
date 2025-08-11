@@ -5,6 +5,7 @@
 1. Navigate to the mobile folder:
    ```bash
    cd mobile
+   cd project_hub
    ```
 
 2. Get dependencies:
@@ -12,7 +13,11 @@
    flutter pub get
    ```
 
-3. Run the app:
+3. Change ip
+   ```bash
+   Change ip in lib/config/api_config.dart to your ip
+   ```
+4. Run the app:
    ```bash
    flutter run
    ```

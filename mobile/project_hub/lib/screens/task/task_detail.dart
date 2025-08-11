@@ -5,6 +5,8 @@ import 'package:project_hub/config/status_config.dart';
 import 'package:project_hub/models/comment_model.dart';
 import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/models/task_model.dart';
+import 'package:project_hub/models/user_model.dart';
+import 'package:project_hub/providers/comment_provider.dart';
 import 'package:project_hub/providers/project_provider.dart';
 import 'package:project_hub/providers/task_provider.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
@@ -26,28 +28,10 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
   String? token;
   String? refreshToken;
+  User? currentUser;
   final TextEditingController _commentController = TextEditingController();
+  bool _isSendingComment = false;
 
-  List<Comment> comments = [
-    Comment(
-      author: 'Jane Smith',
-      content: 'Mockup trông rất tốt! Tuy nhiên mình nghĩ nên',
-      time: '',
-      avatar: 'JS',
-    ),
-    Comment(
-      author: 'John Doe',
-      content: 'Đồng ý với Jane. Và có thể thêm dark mode to',
-      time: '',
-      avatar: 'JD',
-    ),
-    Comment(
-      author: 'Nguyễn Văn A',
-      content: 'Cám ơn feedback! Mình sẽ update design với c cuối tuần.',
-      time: '',
-      avatar: 'NA',
-    ),
-  ];
   @override
   void initState() {
     super.initState();
@@ -58,17 +42,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     try {
       final loadedToken = await StorageService.getToken();
       final loadedRefreshToken = await StorageService.getRefreshToken();
+      final loadedUser = await StorageService.getUser();
 
       setState(() {
         token = loadedToken;
         refreshToken = loadedRefreshToken;
+        currentUser = loadedUser;
       });
 
       if (token != null && mounted) {
+        // Fetch task details
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         await taskProvider.fetchTaskById(
           token: token!,
           taskId: widget.task.id!,
+        );
+
+        // Fetch comments
+        final commentProvider = Provider.of<CommentProvider>(
+          context,
+          listen: false,
+        );
+        await commentProvider.fetchComments(
+          token: token!,
+          entityType: 'Task',
+          entityId: widget.task.id!,
         );
       }
     } catch (e) {
@@ -76,8 +74,54 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  Future<void> _sendComment() async {
+    if (_commentController.text.trim().isEmpty || token == null) return;
+
+    setState(() {
+      _isSendingComment = true;
+    });
+
+    final commentProvider = Provider.of<CommentProvider>(
+      context,
+      listen: false,
+    );
+
+    final success = await commentProvider.createComment(
+      token: token!,
+      entityType: 'Task',
+      entityId: widget.task.id!,
+      content: _commentController.text.trim(),
+    );
+
+    setState(() {
+      _isSendingComment = false;
+    });
+
+    if (success) {
+      _commentController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bình luận đã được gửi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(commentProvider.errorMessage ?? 'Lỗi gửi bình luận'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -833,23 +877,42 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   ),
                   style: TextStyle(fontSize: 14.sp),
+                  enabled: !_isSendingComment,
                 ),
               ),
 
               SizedBox(width: 8.w),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: Color(0xFF6C63FF),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: Text(
-                  'Gửi',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
+              GestureDetector(
+                onTap: _isSendingComment ? null : _sendComment,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 8.h,
                   ),
+                  decoration: BoxDecoration(
+                    color: _isSendingComment ? Colors.grey : Color(0xFF6C63FF),
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child:
+                      _isSendingComment
+                          ? SizedBox(
+                            width: 16.w,
+                            height: 16.h,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : Text(
+                            'Gửi',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                 ),
               ),
             ],
@@ -858,8 +921,75 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
         SizedBox(height: 16.h),
 
-        // Comments list
-        ...comments.map((comment) => _buildCommentItem(comment)),
+        // Comments list - Using real data from CommentProvider
+        Consumer<CommentProvider>(
+          builder: (context, commentProvider, child) {
+            if (commentProvider.isLoading) {
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.h),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            // Only show error for real errors, not for empty comments
+            if (commentProvider.errorMessage != null &&
+                !commentProvider.errorMessage!.toLowerCase().contains(
+                  'no comments',
+                ) &&
+                !commentProvider.errorMessage!.toLowerCase().contains('null')) {
+              return Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red, size: 24.sp),
+                    SizedBox(height: 8.h),
+                    Text(
+                      commentProvider.errorMessage!,
+                      style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8.h),
+                    TextButton(
+                      onPressed: () {
+                        commentProvider.clearError();
+                        _initializeData();
+                      },
+                      child: Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final comments = commentProvider.comments;
+
+            if (comments.isEmpty) {
+              return Center(
+                child: Container(
+                  padding: EdgeInsets.all(16.r),
+                  child: Text(
+                    'Chưa có bình luận nào.',
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children:
+                  comments
+                      .map((comment) => _buildCommentItem(comment))
+                      .toList(),
+            );
+          },
+        ),
       ],
     );
   }
@@ -873,27 +1003,60 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           CircleAvatar(
             radius: 16.r,
             backgroundColor: Color(0xFF6C63FF),
-            child: Text(
-              comment.avatar,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child:
+                comment.author.avatar.isNotEmpty
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: Image.network(
+                        comment.author.avatar,
+                        width: 32.w,
+                        height: 32.w,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Text(
+                            _getInitials(comment.author.fullName),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                    : Text(
+                      _getInitials(comment.author.fullName),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
           ),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  comment.author,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D2D2D),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      comment.author.fullName,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D2D2D),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      _formatTime(comment.createdAt),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 4.h),
                 Text(
@@ -910,6 +1073,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return 'U';
+    List<String> names = name.split(' ');
+    if (names.length >= 2) {
+      return '${names[0][0]}${names[1][0]}'.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return DateFormat('dd/MM').format(dateTime);
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m';
+    } else {
+      return 'vừa xong';
+    }
   }
 
   Widget _buildAddMember() {
@@ -982,7 +1169,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        _assignedToMember(member.id!);
+                                        _assignedToMember(member.id);
                                       },
                                       child: Text('Xác nhận'),
                                     ),
