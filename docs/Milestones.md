@@ -57,23 +57,31 @@
 - [ ] Refresh Token - 1 days
 ### Frontend tasks
 - [ ] Login screen (mobile + web) - 1 days
+- [ ] Register forms
 
-## Backlog tasks
-- [ ] Invalidate tokens on change password
+
+## Milestone 4:
+### Backend tasks
 - [ ] Data validation middleware
 - [ ] Error handling structure
 
 ### Frontend Tasks
-- [ ] Login/Register forms
 - [ ] Task list/create/edit views
 - [ ] Form validation & error displays
-- [ ] API integration services
 - [ ] Basic routing setup
-- [ ] Task Hyperlink - 
 
 ### Mobile Tasks
 - [ ] Auth screens implementation
 - [ ] Task management screens
 - [ ] Local storage setup
-- [ ] API service integration
 - [ ] Basic navigation flow
+
+
+## Milestone 5
+- [ ] Invalidate tokens on change password
+- [ ] Task Hyperlink Due: 5/8
+- [ ] API service integration
+
+## Backlog
+- [ ] Deploy / Showcase
+- [ ] Mentor: Project assessment questions
