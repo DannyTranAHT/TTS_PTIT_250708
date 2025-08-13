@@ -56,8 +56,10 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  console.log('Login request body:', req.body);
   try {
     const { email, username, password } = req.body;
+    console.log('Login attempt:', { email, username });
     if(username && password) {
       // Login by username
       const user = await User.findOne({ username }).select('+password');

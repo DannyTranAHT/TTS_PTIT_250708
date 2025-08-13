@@ -28,8 +28,8 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => AuthProvider()),
             ChangeNotifierProvider(create: (_) => ProjectProvider()),
             ChangeNotifierProvider(create: (_) => TaskProvider()),
-            ChangeNotifierProvider(create: (_) => NotificationProvider()),
             ChangeNotifierProvider(create: (_) => CommentProvider()),
+            ChangeNotifierProvider(create: (_) => NotificationProvider()),
           ],
           child: MaterialApp(
             title: 'ProjectHub',

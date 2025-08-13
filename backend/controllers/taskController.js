@@ -36,7 +36,7 @@ const createTask = async (req, res) => {
     const populatedTask = await Task.findById(task._id)
       .populate('project_id', 'name status')
       .populate('assigned_to_id', 'username full_name email avatar');
-
+    const io = req.app.get('io');
     if (task.assigned_to_id) {
       await createNotification({
         user_id: task.assigned_to_id,
@@ -47,11 +47,23 @@ const createTask = async (req, res) => {
           entity_type: 'Task',
           entity_id: task._id
         }
-      });
-      const io = req.app.get('io');
-      io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
+      }, io);
+      // Gửi thông báo qua socket.io nếu có người được giao
+      if (io) {
+        io.to(`user_${task.assigned_to_id}`).emit('task:assigned', {
+          task: populatedTask,
+          assigned_by: req.user.full_name,
+          message: `New task assigned: ${task.name}`
+        });
+      }
+      
+    }
+    // Gửi thông báo cho tất cả thành viên của project
+    if (io) {
+      io.to(`project_${project_id}`).emit('task:created', {
         task: populatedTask,
-        message: `Bạn vừa được giao công việc mới: ${task.name}`
+        created_by: req.user.full_name,
+        project_name: project.name
       });
     }
     res.status(201).json({ message: 'Task created successfully', task: populatedTask });

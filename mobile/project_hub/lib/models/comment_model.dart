@@ -127,4 +127,8 @@ class Author {
       'user_name': userName,
     };
   }
+  @override
+  String toString() {
+    return 'Author{id: $id, fullName: $fullName, avatar: $avatar, userName: $userName}';
+  }
 }

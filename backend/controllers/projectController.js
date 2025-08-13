@@ -143,7 +143,27 @@ const updateProject = async (req, res) => {
     ).populate('owner_id', 'username full_name email  avatar')
      .populate('members', 'username full_name email role avatar');
 
-
+    const io = req.app.get('io');
+    // Notify members about the project update
+    await createNotification({
+      user_id: updatedProject.members,
+      type: 'project_updated',
+      title: 'Dự án được cập nhật',
+      message: `Dự án "${updatedProject.name}" đã được nhật.`,
+      related_entity: {
+        entity_type: 'Project',
+        entity_id: updatedProject._id
+      }
+    },io);
+    if (io) {
+      updatedProject.members.forEach(memberId => {
+        io.to(`user_${memberId}`).emit('project:updated', {
+          project_id: updatedProject._id,
+          project_name: updatedProject.name,
+          updated_by: req.user.full_name
+        });
+      });
+    }
     res.json({
       message: 'Project updated successfully',
       project: updatedProject
@@ -208,7 +228,7 @@ const addMember = async (req, res) => {
     const updatedProject = await Project.findById(id)
       .populate('owner_id', 'username full_name email avatar')
       .populate('members', 'username full_name email role avatar');
-
+    const io = req.app.get('io');
     // Notify the new member
     await createNotification({
       user_id,
@@ -219,7 +239,29 @@ const addMember = async (req, res) => {
         entity_type: 'Project',
         entity_id: project._id
       }
-    });
+    }, io);
+    if (io) {
+      const newMember = await User.findById(user_id, 'username full_name email avatar');
+      
+      // Notify all existing project members about new member
+      project.members.forEach(memberId => {
+        if (memberId.toString() !== user_id) {
+          io.to(`user_${memberId}`).emit('project:member_added', {
+            project_id: project._id,
+            project_name: project.name,
+            new_member: newMember,
+            added_by: req.user.full_name
+          });
+        }
+      });
+
+      // Notify the new member to join project room
+      io.to(`user_${user_id}`).emit('project:joined', {
+        project_id: project._id,
+        project_name: project.name,
+        role: 'member'
+      });
+    }
 
     res.json({
       message: 'Member added successfully',
@@ -276,6 +318,36 @@ const removeMember = async (req, res) => {
     const updatedProject = await Project.findById(id)
       .populate('owner_id', 'username full_name email avatar')
       .populate('members', 'username full_name email role avatar');
+    // Notify the removed member
+    const io = req.app.get('io');
+    const removedUser = await User.findById(user_id, 'username full_name');
+    await createNotification({
+      user_id,
+      type: 'project_updated',
+      title: 'Bạn đã bị xóa khỏi dự án',
+      message: `Bạn đã bị xóa khỏi dự án: ${project.name}`,
+      related_entity: {
+        entity_type: 'Project',
+        entity_id: project._id,
+      }
+    }, io);
+    if (io) {
+      io.to(`user_${user_id}`).emit('project:removed', {
+        project_id: project._id,
+        project_name: project.name,
+        removed_by: req.user.full_name
+      });
+
+      // Notify all remaining members about the removal
+      project.members.forEach(memberId => {
+        io.to(`user_${memberId}`).emit('project:member_removed', {
+          project_id: project._id,
+          project_name: project.name,
+          removed_member: removedUser,
+          removed_by: req.user.full_name
+        });
+      });
+    }
     res.json({ message: 'Member removed successfully', project: updatedProject });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -125,13 +125,9 @@ class CommentApiService {
     required String token,
     required String commentId,
     required String content,
-    List<String>? attachments,
   }) async {
     try {
-      final body = {
-        'content': content,
-        if (attachments != null) 'attachments': attachments.join(','),
-      };
+      final body = {'content': content};
 
       final uri = Uri.parse('${ApiConfig.comments}/$commentId');
       final response = await http.put(
@@ -139,13 +135,9 @@ class CommentApiService {
         headers: ApiConfig.authHeaders(token),
         body: json.encode(body),
       );
-
-      print('Update Comment Response Status: ${response.statusCode}');
-      print('Update Comment Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final comment = Comment.fromJson(data['data']);
+        final comment = Comment.fromJson(data['comment']);
 
         return ApiResponse.success(
           model: comment,
@@ -177,10 +169,6 @@ class CommentApiService {
         uri,
         headers: ApiConfig.authHeaders(token),
       );
-
-      print('Delete Comment Response Status: ${response.statusCode}');
-      print('Delete Comment Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return ApiResponse.success(

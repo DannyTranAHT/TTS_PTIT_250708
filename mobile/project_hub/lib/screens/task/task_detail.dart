@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/config/status_config.dart';
 import 'package:project_hub/models/comment_model.dart';
 import 'package:project_hub/models/project_model.dart';
@@ -9,6 +10,7 @@ import 'package:project_hub/models/user_model.dart';
 import 'package:project_hub/providers/comment_provider.dart';
 import 'package:project_hub/providers/project_provider.dart';
 import 'package:project_hub/providers/task_provider.dart';
+import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/widgets/top_bar.dart';
 import 'package:project_hub/services/storage_service.dart';
 import 'package:provider/provider.dart';
@@ -30,6 +32,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   String? refreshToken;
   User? currentUser;
   final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _editCommentController = TextEditingController();
   bool _isSendingComment = false;
 
   @override
@@ -112,6 +115,86 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(commentProvider.errorMessage ?? 'Lỗi gửi bình luận'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _editComment(String commentId, String content) async {
+    setState(() {
+      _isSendingComment = true;
+    });
+
+    final commentProvider = Provider.of<CommentProvider>(
+      context,
+      listen: false,
+    );
+
+    final success = await commentProvider.updateComment(
+      token: token!,
+      commentId: commentId,
+      content: content,
+    );
+
+    setState(() {
+      _isSendingComment = false;
+    });
+
+    if (success) {
+      _commentController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bình luận đã được cập nhật'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      Navigator.pop(context);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              commentProvider.errorMessage ?? 'Lỗi cập nhật bình luận',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteComment(String commentId) async {
+    if (token == null) return;
+
+    final commentProvider = Provider.of<CommentProvider>(
+      context,
+      listen: false,
+    );
+
+    final success = await commentProvider.deleteComment(
+      token: token!,
+      commentId: commentId,
+    );
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bình luận đã được xóa'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      Navigator.pop(context);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(commentProvider.errorMessage ?? 'Lỗi xóa bình luận'),
             backgroundColor: Colors.red,
           ),
         );
@@ -503,18 +586,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     children: [
                       CircleAvatar(
                         radius: 16.r,
-                        backgroundColor: Color(0xFF6C63FF),
-                        child: Text(
-                          task.assignedTo!.fullName
-                              .substring(0, 1)
-                              .toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        backgroundImage:
+                            (task.assignedTo!.avatar != null &&
+                                    task.assignedTo!.avatar != "None")
+                                ? NetworkImage(
+                                  '${ApiConfig.socketUrl}/${task.assignedTo!.avatar}',
+                                )
+                                : AssetImage(AppImages.avt) as ImageProvider,
                       ),
+
                       SizedBox(width: 8.w),
                       Text(
                         task.assignedTo!.fullName,
@@ -968,7 +1048,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               );
             }
 
-            final comments = commentProvider.comments;
+            List<Comment> comments = commentProvider.comments;
 
             if (comments.isEmpty) {
               return Center(
@@ -982,11 +1062,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               );
             }
 
-            return Column(
-              children:
-                  comments
-                      .map((comment) => _buildCommentItem(comment))
-                      .toList(),
+            return Container(
+              constraints: BoxConstraints(maxHeight: 300.h),
+              child: ListView.builder(
+                itemCount: comments.length,
+                itemBuilder: (context, index) {
+                  Comment comment = comments[index];
+                  return _buildCommentItem(comment);
+                },
+              ),
             );
           },
         ),
@@ -997,41 +1081,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget _buildCommentItem(Comment comment) {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.r),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 60, 60, 60).withOpacity(0.1),
+            blurRadius: 4.r,
+            offset: Offset(0, 2.r),
+            spreadRadius: 1.r,
+          ),
+        ],
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 16.r,
+            radius: 20.r,
             backgroundColor: Color(0xFF6C63FF),
+            backgroundImage:
+                (comment.author.avatar == "None")
+                    ? AssetImage(AppImages.avt)
+                    : NetworkImage(
+                      '${ApiConfig.socketUrl}/${comment.author.avatar!}',
+                    ),
             child:
-                comment.author.avatar.isNotEmpty
-                    ? ClipRRect(
-                      borderRadius: BorderRadius.circular(16.r),
-                      child: Image.network(
-                        comment.author.avatar,
-                        width: 32.w,
-                        height: 32.w,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Text(
-                            _getInitials(comment.author.fullName),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                    : Text(
+                comment.author.avatar == "None"
+                    ? Text(
                       _getInitials(comment.author.fullName),
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 12.sp,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
+                    )
+                    : null,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -1039,6 +1123,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       comment.author.fullName,
@@ -1067,6 +1152,96 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     height: 1.3,
                   ),
                 ),
+                if (comment.author.id == currentUser?.id)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          _editCommentController.text = comment.content;
+                          showDialog(
+                            context: context,
+                            builder:
+                                (context) => AlertDialog(
+                                  title: Text('Chỉnh sửa bình luận'),
+                                  content: TextField(
+                                    controller: _editCommentController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Nhập bình luận mới',
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        if (_editCommentController.text
+                                            .trim()
+                                            .isEmpty) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Nội dung bình luận không được để trống.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        _editComment(
+                                          comment.id!,
+                                          _editCommentController.text.trim(),
+                                        );
+                                      },
+                                      child: Text('Lưu'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        },
+                        child: Text(
+                          'Sửa',
+                          style: TextStyle(
+                            color: Color(0xFF6C63FF),
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder:
+                                (context) => AlertDialog(
+                                  title: Text('Xóa bình luận'),
+                                  content: Text(
+                                    'Bạn có chắc chắn muốn xóa bình luận này?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        _deleteComment(comment.id!);
+                                      },
+                                      child: Text('Xóa'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        },
+                        child: Text(
+                          'Xóa',
+                          style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),

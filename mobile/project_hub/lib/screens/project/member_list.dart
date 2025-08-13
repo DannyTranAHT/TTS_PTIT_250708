@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/models/user_model.dart';
 import 'package:project_hub/providers/auth_provider.dart';
@@ -504,7 +505,9 @@ class _MemberListScreenState extends State<MemberListScreen> {
                       )
                       : CircleAvatar(
                         radius: 28.r,
-                        backgroundImage: NetworkImage(member.avatar ?? ''),
+                        backgroundImage: NetworkImage(
+                          '${ApiConfig.socketUrl}/${member.avatar}',
+                        ),
                       ),
                   if (member.isActive)
                     Positioned(

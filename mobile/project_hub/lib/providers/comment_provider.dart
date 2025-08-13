@@ -73,7 +73,6 @@ class CommentProvider with ChangeNotifier {
       if (response.isSuccess) {
         _comments = response.model ?? [];
         _setState(CommentState.loaded);
-        print('Comments fetched successfully: ${_comments.length} comments');
       } else {
         // Only show error if it's not just "no comments"
         if (response.statusCode != 200) {
@@ -162,7 +161,6 @@ class CommentProvider with ChangeNotifier {
         token: token,
         commentId: commentId,
         content: content,
-        attachments: attachments,
       );
 
       if (response.isSuccess && response.model != null) {

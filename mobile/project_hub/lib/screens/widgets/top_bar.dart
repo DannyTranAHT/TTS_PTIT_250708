@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/providers/auth_provider.dart';
+import 'package:project_hub/providers/notification_provider.dart';
 import 'package:project_hub/res/images/app_images.dart';
 import 'package:project_hub/screens/auth/login.dart';
 import 'package:project_hub/screens/notifications/notifications_screen.dart';
@@ -18,8 +19,8 @@ class TopBar extends StatefulWidget {
 class _TopBarState extends State<TopBar> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return Consumer2<AuthProvider, NotificationProvider>(
+      builder: (context, authProvider, notiProvider, child) {
         return Container(
           height: 80.h,
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -49,25 +50,52 @@ class _TopBarState extends State<TopBar> {
                       ),
                       Row(
                         children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.notifications_outlined,
-                              color: Colors.white,
-                              size: 28.sp,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NotificationsScreen(),
+                          Stack(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.notifications_outlined,
+                                  color: Colors.white,
+                                  size: 28.sp,
                                 ),
-                              );
-                            },
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => NotificationsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (notiProvider.unreadCount > 0)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: CircleAvatar(
+                                    radius: 10.r,
+                                    backgroundColor: Colors.red,
+                                    child: Text(
+                                      notiProvider.unreadCount.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           SizedBox(width: 8.w),
                           CircleAvatar(
                             radius: 20.r,
-                            backgroundImage: AssetImage(AppImages.avt),
+                            backgroundImage:
+                                (authProvider.user?.avatar == "None" ||
+                                        authProvider.errorMessage != null)
+                                    ? AssetImage(AppImages.avt)
+                                    : NetworkImage(
+                                      '${ApiConfig.socketUrl}/${authProvider.user!.avatar!}',
+                                    ),
                           ),
                           SizedBox(width: 8.w),
                           IconButton(
@@ -93,20 +121,40 @@ class _TopBarState extends State<TopBar> {
                   : Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
-                          size: 28.sp,
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NotificationsScreen(),
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 28.sp,
                             ),
-                          );
-                        },
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (notiProvider.unreadCount > 0)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: CircleAvatar(
+                                radius: 10.r,
+                                backgroundColor: Colors.red,
+                                child: Text(
+                                  notiProvider.unreadCount.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       Row(
                         children: [

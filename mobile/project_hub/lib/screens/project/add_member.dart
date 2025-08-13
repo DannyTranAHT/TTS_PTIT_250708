@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_hub/config/api_config.dart';
 import 'package:project_hub/models/project_model.dart';
 import 'package:project_hub/models/user_model.dart';
 import 'package:project_hub/providers/auth_provider.dart';
@@ -457,7 +458,9 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                   )
                   : CircleAvatar(
                     radius: 24.r,
-                    backgroundImage: NetworkImage(user.avatar ?? ''),
+                    backgroundImage: NetworkImage(
+                      '${ApiConfig.socketUrl}/${user.avatar}',
+                    ),
                   ),
               SizedBox(width: 12.w),
               Expanded(
