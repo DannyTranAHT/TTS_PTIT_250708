@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './profileform.css';
+import { getProjectById } from '../services/projectService';
 import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user')) || {};
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -14,6 +16,16 @@ const ProfilePage = () => {
     localStorage.removeItem('notifications');
     navigate('/login');
   };
+useEffect(() => {
+  const fetchProjectData = async () => {
+    const projectId = user.projectId; // Assuming user object contains projectId
+    if (projectId) {
+      const projectData = await getProjectById(projectId);
+      console.log('Project Data:', projectData);
+    }
+  };
+  fetchProjectData();
+}, []);
 
   return (
     <div className="profile-page">
@@ -23,9 +35,9 @@ const ProfilePage = () => {
           <div className="profile-content">
             <div className="profile-avatar">NA</div>
             <div className="profile-info">
-              <h1 className="profile-name">Nguyễn Văn A</h1>
-              <p className="profile-email">nguyenvana@example.com</p>
-              <p className="profile-role">Project Manager</p>
+              <h1 className="profile-name">{user.full_name}</h1>
+              <p className="profile-email">{user.email}</p>
+              <p className="profile-role">{user.role}</p>
             </div>
           </div>
         </div>
@@ -36,19 +48,19 @@ const ProfilePage = () => {
             <h2 className="info-title">Thông tin cá nhân</h2>
             <div className="info-item">
               <span className="info-label">Họ và tên</span>
-              <span className="info-value">Nguyễn Văn A</span>
+              <span className="info-value">{user.full_name}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Email</span>
-              <span className="info-value">nguyenvana@example.com</span>
+              <span className="info-value">{user.email}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Vai trò</span>
-              <span className="info-value">Project Manager</span>
+              <span className="info-value">{user.role}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Chuyên ngành</span>
-              <span className="info-value">Công nghệ thông tin</span>
+              <span className="info-value">{user.major}</span>
             </div>
             <button className="edit-btn" onClick={() => navigate('/editprofile')}>
               ✏️ Chỉnh sửa thông tin

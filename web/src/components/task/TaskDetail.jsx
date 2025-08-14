@@ -138,7 +138,7 @@ const TaskDetail = () => {
         due_date: task.due_date,
         status: task.status,
         priority: task.priority,
-        assigned_to_id: task.assigned_to_id,
+        assigned_to_id: task.assigned_to_id._id,
         hours: task.hours,
         attachments: task.attachments,
       };
@@ -262,7 +262,7 @@ const handleSuggestionClick = (task) => {
                   )}
                 </>
               )}
-              {currentUser?._id === task?.assigned_to_id && (
+              {currentUser?._id === task?.assigned_to_id?._id && (
                 <>
                   {task?.status !== "In Review" && (
                     <button className="action-btn primary" onClick={handleCompleteTask}>

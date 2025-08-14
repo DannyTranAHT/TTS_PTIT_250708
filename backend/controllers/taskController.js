@@ -280,12 +280,12 @@ const requestCompleteTask = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
     // Chỉ người được giao mới gửi yêu cầu hoàn thành
-    if (!task.assigned_to_id || task.assigned_to_id.toString() !== req.user._id.toString()) {
+    if (!task.assigned_to_id._id || task.assigned_to_id._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only assignee can request completion' });
     }
     // Đánh dấu trạng thái yêu cầu hoàn thành (dùng status hoặc thêm trường tạm thời)
     task.status = 'In Review';
-    await task.save();
+    
     await createNotification({
       user_id: project.owner_id._id, // Gửi thông báo cho người tạo project
       type: 'task_updated',
@@ -296,6 +296,7 @@ const requestCompleteTask = async (req, res) => {
         entity_id: task._id
       }
     });
+    await task.save();
     const populatedTask = await Task.findById(task._id)
       .populate('project_id', 'name status')
       .populate('assigned_to_id', 'username full_name email avatar');
