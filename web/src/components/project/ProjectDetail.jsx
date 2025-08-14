@@ -24,6 +24,7 @@ const ProjectDetail = () => {
       try {
         const res = await getProjectById(id);
         setProject(res.project);
+        console.log('Dự án:', res.project);
       } catch (error) {
         console.error('Lỗi khi lấy thông tin dự án:', error);
       }
@@ -34,7 +35,6 @@ const ProjectDetail = () => {
       try {
         const res = await getAllTasks(id, page);
         setTasks(res.tasks);
-        console.log('Tasks:', res.tasks);
         setPagination({
           currentPage: res.currentPage,
           totalPages: res.totalPages,
@@ -156,8 +156,8 @@ const ProjectDetail = () => {
             </div>
             <div className="stat-item">
               <div className="stat-number">
-                {project.budget?.$numberDecimal
-                  ? parseFloat(project.budget.$numberDecimal.toString())
+                {project.budget
+                  ? parseFloat(project.budget.toString())
                   : 'Không xác định'}
               </div>
               <div className="stat-label">Ngân sách</div>

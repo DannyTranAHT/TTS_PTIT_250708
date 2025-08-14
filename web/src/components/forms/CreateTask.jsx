@@ -64,9 +64,7 @@ const CreateTask = () => {
       priority: form.taskPriority.value,
       assigned_to_id: form.assignedToId.value || null,
       hours: parseInt(form.taskHours.value) || 0,
-      attachments: JSON.stringify(
-        files.map((file) => ({ name: file.name, size: (file.size / 1024).toFixed(1) + ' KB' }))
-      ),
+      attachments: files.map((file) => file.name).join(',') || null,
     };
 
     // Kiểm tra các trường bắt buộc
