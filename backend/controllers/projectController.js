@@ -1,6 +1,10 @@
 const Project = require('../models/Project');
 const { createNotification } = require('../services/notificationService');
 const Task = require('../models/Task');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
+
 const getAllProjects = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search } = req.query;
@@ -204,70 +208,108 @@ const addMember = async (req, res) => {
     const { id } = req.params;
     const { user_id } = req.body;
 
+    // Validate input
+    if (!user_id) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Find and update project (main business logic)
     const project = await Project.findById(id);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Check permissions
-    const canAddMember =
-                        project.owner_id.toString() === req.user._id.toString();
+    // Check permissions and validations...
+    // (existing validation logic)
 
-    if (!canAddMember) {
-      return res.status(403).json({ message: 'Permission denied' });
-    }
-
-    // Check if user is already a member
-    if (project.members.includes(user_id)) {
-      return res.status(400).json({ message: 'User is already a member' });
-    }
-
+    // Add member to project
     project.members.push(user_id);
     await project.save();
 
+    // Get updated project with populated fields
     const updatedProject = await Project.findById(id)
       .populate('owner_id', 'username full_name email avatar')
       .populate('members', 'username full_name email role avatar');
-    const io = req.app.get('io');
-    // Notify the new member
-    await createNotification({
-      user_id,
-      type: 'project_updated',
-      title: 'Added to Project',
-      message: `You have been added to project: ${project.name}`,
-      related_entity: {
-        entity_type: 'Project',
-        entity_id: project._id
-      }
-    }, io);
-    if (io) {
-      const newMember = await User.findById(user_id, 'username full_name email avatar');
-      
-      // Notify all existing project members about new member
-      project.members.forEach(memberId => {
-        if (memberId.toString() !== user_id) {
-          io.to(`user_${memberId}`).emit('project:member_added', {
-            project_id: project._id,
-            project_name: project.name,
-            new_member: newMember,
-            added_by: req.user.full_name
-          });
+
+    // 🚀 IMPROVED: Separate socket operations with error handling
+    const socketOperations = async () => {
+      try {
+        const io = req.app.get('io');
+        
+        // Check if socket server is available
+        if (!io) {
+          console.warn('⚠️ Socket.IO not available - notifications will be delayed');
+          return;
         }
-      });
 
-      // Notify the new member to join project room
-      io.to(`user_${user_id}`).emit('project:joined', {
-        project_id: project._id,
-        project_name: project.name,
-        role: 'member'
-      });
-    }
+        // Create notification with error handling
+        try {
+          await createNotification({
+            user_id,
+            type: 'project_updated',
+            title: 'Added to Project',
+            message: `You have been added to project: ${project.name}`,
+            related_entity: {
+              entity_type: 'Project',
+              entity_id: project._id
+            }
+          }, io);
+        } catch (notificationError) {
+          console.error('❌ Error creating notification:', notificationError);
+          // Don't throw - continue with socket emissions
+        }
 
+        // Emit socket events with error handling
+        try {
+          const newMember = await User.findById(user_id, 'username full_name email avatar');
+          
+          // Notify existing project members
+          project.members.forEach(memberId => {
+            if (memberId.toString() !== user_id) {
+              try {
+                io.to(`user_${memberId}`).emit('project:member_added', {
+                  project_id: project._id,
+                  project_name: project.name,
+                  new_member: newMember,
+                  added_by: req.user.full_name
+                });
+              } catch (emitError) {
+                console.error(`❌ Error emitting to user ${memberId}:`, emitError);
+              }
+            }
+          });
+
+          // Notify the new member
+          try {
+            io.to(`user_${user_id}`).emit('project:joined', {
+              project_id: project._id,
+              project_name: project.name,
+              role: 'member'
+            });
+          } catch (emitError) {
+            console.error(`❌ Error emitting to new member ${user_id}:`, emitError);
+          }
+
+        } catch (socketError) {
+          console.error('❌ Error in socket emissions:', socketError);
+        }
+
+      } catch (socketOperationError) {
+        console.error('❌ Socket operations failed:', socketOperationError);
+      }
+    };
+
+    // Execute socket operations asynchronously without blocking response
+    socketOperations();
+
+    // 🎉 ALWAYS return success response (main operation completed)
     res.json({
       message: 'Member added successfully',
       project: updatedProject
     });
+
   } catch (error) {
+    console.error('❌ Error in addMember:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -1,35 +1,17 @@
 const Notification = require('../models/Notification');
 
-//ENHANCED NOTIFICATION CREATION WITH REALTIME SOCKET
+// ENHANCED NOTIFICATION CREATION WITH ROBUST ERROR HANDLING
 const createNotification = async (notificationData, io = null) => {
   try {
+    // 1. Create notification in database first (critical operation)
     const notification = await Notification.create(notificationData);
-    
-    //  REALTIME NOTIFICATION PUSH
+    console.log('✅ Notification created in DB:', notification._id);
+
+    // 2. Handle socket operations separately (non-critical)
     if (io) {
-      // Emit new notification
-      io.to(`user_${notificationData.user_id}`).emit('notification:new', {
-        id: notification._id,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        created_at: notification.created_at,
-        related_entity: notification.related_entity,
-        is_read: notification.is_read
-      });
-      
-      //  UPDATE BADGE COUNT REALTIME
-      const newCount = await getUnreadCount(notificationData.user_id);
-      io.to(`user_${notificationData.user_id}`).emit('notifications:count', { 
-        count: newCount 
-      });
-      
-      // EMIT SYSTEM ANALYTICS (optional)
-      io.emit('system:notification_sent', {
-        user_id: notificationData.user_id,
-        type: notificationData.type,
-        timestamp: new Date()
-      });
+      await handleSocketNotifications(notification, notificationData, io);
+    } else {
+      console.warn('⚠️ Socket.IO not provided - notification created but not pushed realtime');
     }
     
     return notification;
@@ -39,58 +21,106 @@ const createNotification = async (notificationData, io = null) => {
   }
 };
 
-// BULK NOTIFICATIONS WITH SOCKET OPTIMIZATION
-const createBulkNotifications = async (notifications, io = null) => {
+// SEPARATE SOCKET OPERATIONS FOR BETTER ERROR ISOLATION
+const handleSocketNotifications = async (notification, notificationData, io) => {
   try {
-    const createdNotifications = await Notification.insertMany(notifications);
-    
-    if (io) {
-      // Group notifications by user_id for efficient emission
-      const userGroups = createdNotifications.reduce((acc, notif) => {
-        const userId = notif.user_id.toString();
-        acc[userId] = acc[userId] || [];
-        acc[userId].push(notif);
-        return acc;
-      }, {});
-      
-      // Emit to each user efficiently
-      for (const [userId, userNotifs] of Object.entries(userGroups)) {
-        // Emit each notification
-        userNotifs.forEach(notif => {
-          io.to(`user_${userId}`).emit('notification:new', {
-            id: notif._id,
-            title: notif.title,
-            message: notif.message,
-            type: notif.type,
-            created_at: notif.created_at,
-            related_entity: notif.related_entity
-          });
-        });
-        
-        // Update count once per user
-        await emitNotificationCount(userId, io);
-      }
+    // Check if socket server is healthy
+    if (!io || typeof io.to !== 'function') {
+      console.warn('⚠️ Socket.IO server not healthy');
+      return;
     }
-    
-    return createdNotifications;
-  } catch (error) {
-    console.error('❌ Error creating bulk notifications:', error);
-    throw error;
+
+    // Emit new notification with timeout protection
+    const emitWithTimeout = (room, event, data, timeout = 5000) => {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error(`Socket emit timeout for ${event}`));
+        }, timeout);
+
+        try {
+          io.to(room).emit(event, data);
+          clearTimeout(timer);
+          resolve();
+        } catch (error) {
+          clearTimeout(timer);
+          reject(error);
+        }
+      });
+    };
+
+    // 1. Emit new notification
+    try {
+      await emitWithTimeout(`user_${notificationData.user_id}`, 'notification:new', {
+        id: notification._id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        created_at: notification.created_at,
+        related_entity: notification.related_entity,
+        is_read: notification.is_read
+      });
+      console.log('✅ New notification emitted to user:', notificationData.user_id);
+    } catch (emitError) {
+      console.error('❌ Failed to emit new notification:', emitError);
+    }
+
+    // 2. Update badge count
+    try {
+      const newCount = await getUnreadCount(notificationData.user_id);
+      await emitWithTimeout(`user_${notificationData.user_id}`, 'notifications:count', { 
+        count: newCount 
+      });
+      console.log('✅ Notification count updated for user:', notificationData.user_id);
+    } catch (countError) {
+      console.error('❌ Failed to emit notification count:', countError);
+    }
+
+    // 3. Optional system analytics (non-critical)
+    try {
+      io.emit('system:notification_sent', {
+        user_id: notificationData.user_id,
+        type: notificationData.type,
+        timestamp: new Date()
+      });
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics emit failed (non-critical):', analyticsError);
+    }
+
+  } catch (socketError) {
+    console.error('❌ Socket notification handling failed:', socketError);
+    // Don't throw - notification was already saved to DB
   }
 };
 
-// HELPER FUNCTION FOR COUNT UPDATES
+// IMPROVED EMIT NOTIFICATION COUNT WITH FALLBACK
 const emitNotificationCount = async (userId, io) => {
   try {
+    if (!io) {
+      console.warn('⚠️ Socket.IO not available for notification count');
+      return;
+    }
+
     const count = await getUnreadCount(userId);
-    io.to(`user_${userId}`).emit('notifications:count', { count });
-    return count;
+    
+    // Add connection check
+    const userRoom = `user_${userId}`;
+    const socketsInRoom = await io.in(userRoom).allSockets();
+    
+    if (socketsInRoom.size === 0) {
+      console.log(`⚠️ No active sockets for user ${userId}`);
+      return;
+    }
+
+    io.to(userRoom).emit('notifications:count', { count });
+    console.log(`✅ Notification count (${count}) emitted to user ${userId}`);
+    
   } catch (error) {
-    console.error('❌ Error emitting notification count:', error);
-    return 0;
+    console.error('❌ Failed to emit notification count:', error);
+    // Don't throw - this is a non-critical operation
   }
 };
 
+// IMPROVED GET UNREAD COUNT WITH ERROR HANDLING
 const getUnreadCount = async (userId) => {
   try {
     const count = await Notification.countDocuments({
@@ -99,78 +129,24 @@ const getUnreadCount = async (userId) => {
     });
     return count;
   } catch (error) {
-    console.error('Error getting unread count:', error);
-    return 0;
+    console.error('❌ Error getting unread count:', error);
+    return 0; // Return 0 as fallback
   }
 };
 
-const markNotificationsAsRead = async (userId, notificationIds = null) => {
-  try {
-    const query = { user_id: userId, is_read: false };
-    
-    if (notificationIds) {
-      query._id = { $in: notificationIds };
-    }
-    
-    const result = await Notification.updateMany(query, { is_read: true });
-    return result;
-  } catch (error) {
-    console.error('Error marking notifications as read:', error);
-    throw error;
-  }
-};
-
-// BATCH MARK AS READ WITH SOCKET
-const markMultipleAsRead = async (notificationIds, userId, io = null) => {
-  try {
-    const result = await Notification.updateMany(
-      { 
-        _id: { $in: notificationIds },
-        user_id: userId,
-        is_read: false 
-      },
-      { is_read: true }
-    );
-
-    if (io && result.modifiedCount > 0) {
-      await emitNotificationCount(userId, io);
-      io.to(`user_${userId}`).emit('notifications:batch_marked_read', {
-        notification_ids: notificationIds,
-        count: result.modifiedCount
-      });
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error marking multiple notifications as read:', error);
-    throw error;
-  }
-};
-
-const deleteOldNotifications = async (daysOld = 30) => {
-  try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-    
-    const result = await Notification.deleteMany({
-      created_at: { $lt: cutoffDate },
-      is_read: true
-    });
-    
-    console.log(`🗑️ Deleted ${result.deletedCount} old notifications`);
-    return result;
-  } catch (error) {
-    console.error('Error deleting old notifications:', error);
-    throw error;
-  }
+// HEALTH CHECK FOR SOCKET OPERATIONS
+const isSocketHealthy = (io) => {
+  return io && 
+         typeof io.to === 'function' && 
+         typeof io.emit === 'function' &&
+         io.engine && 
+         io.engine.clientsCount !== undefined;
 };
 
 module.exports = {
   createNotification,
-  createBulkNotifications,
+  emitNotificationCount,
   getUnreadCount,
-  markNotificationsAsRead,
-  markMultipleAsRead,
-  deleteOldNotifications,
-  emitNotificationCount 
+  handleSocketNotifications,
+  isSocketHealthy
 };
